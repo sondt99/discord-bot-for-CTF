@@ -70,7 +70,7 @@ class ScoreboardCog(commands.Cog):
                 await interaction.response.send_message(
                     embed=build_simple_embed(
                         "Need event ID",
-                        "Server co nhieu giai. Hay nhap event_id.",
+                        "Multiple events in this server. Please provide event_id.",
                     )
                 )
                 return
@@ -82,7 +82,7 @@ class ScoreboardCog(commands.Cog):
                 await interaction.response.send_message(
                     embed=build_simple_embed(
                         "Event not found",
-                        f"Khong tim thay event ID {event_id} trong server.",
+                        f"Event ID {event_id} not found in this server.",
                     )
                 )
                 return

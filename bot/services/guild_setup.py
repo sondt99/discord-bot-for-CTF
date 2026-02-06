@@ -65,3 +65,15 @@ async def hide_ctf_category_and_channels(
 
     for channel in category.channels:
         await channel.edit(overwrites=overwrites)
+
+
+async def delete_ctf_category_and_channels(
+    guild: discord.Guild, category_id: int
+) -> None:
+    category = guild.get_channel(category_id)
+    if not isinstance(category, discord.CategoryChannel):
+        raise ValueError("Category not found.")
+
+    for channel in list(category.channels):
+        await channel.delete()
+    await category.delete()

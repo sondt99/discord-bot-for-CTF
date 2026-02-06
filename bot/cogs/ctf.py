@@ -4,10 +4,12 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from bot.config import CTF_REMOVE_PASSWORD
 from bot.db.repository import Repository
 from bot.services.ctftime import fetch_event, fetch_upcoming_events
 from bot.services.guild_setup import (
     create_ctf_category_and_channels,
+    delete_ctf_category_and_channels,
     hide_ctf_category_and_channels,
 )
 from bot.utils.embeds import build_event_embed, build_simple_embed
@@ -32,7 +34,7 @@ class CtfCog(commands.Cog):
             await interaction.followup.send(
                 embed=build_simple_embed(
                     "CTFtime error",
-                    "Khong the lay danh sach giai. Thu lai sau.",
+                    "Unable to fetch upcoming events. Try again later.",
                 )
             )
             return
@@ -60,7 +62,7 @@ class CtfCog(commands.Cog):
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "CTF already configured",
-                    f"Event da co: {existing.event_title} (ID {existing.ctftime_event_id}).",
+                    f"Event already exists: {existing.event_title} (ID {existing.ctftime_event_id}).",
                 ),
             )
             return
@@ -72,7 +74,7 @@ class CtfCog(commands.Cog):
             await interaction.followup.send(
                 embed=build_simple_embed(
                     "CTFtime error",
-                    "Khong the lay thong tin giai. Kiem tra ID.",
+                    "Unable to fetch event details. Check the ID.",
                 )
             )
             return
@@ -86,7 +88,7 @@ class CtfCog(commands.Cog):
             await interaction.followup.send(
                 embed=build_simple_embed(
                     "Missing permissions",
-                    "Bot can thieu quyen Manage Channels.",
+                    "Bot may be missing Manage Channels permission.",
                 )
             )
             return
@@ -94,7 +96,7 @@ class CtfCog(commands.Cog):
             await interaction.followup.send(
                 embed=build_simple_embed(
                     "Setup error",
-                    "Khong the tao category/channels. Thu lai sau.",
+                    "Unable to create category/channels. Try again later.",
                 )
             )
             return
@@ -109,10 +111,12 @@ class CtfCog(commands.Cog):
             finish_time=event.get("finish"),
         )
 
+        status = f"Created category `{category.name}` with {len(channels)} channels."
+
         await interaction.followup.send(
             embed=build_simple_embed(
                 "CTF configured",
-                f"Created category `{category.name}` with {len(channels)} channels.",
+                status,
             )
         )
 
@@ -134,7 +138,7 @@ class CtfCog(commands.Cog):
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "Need event ID",
-                    "Server co nhieu giai. Hay nhap event_id.",
+                    "Multiple events in this server. Please provide event_id.",
                 )
             )
             return None
@@ -143,7 +147,7 @@ class CtfCog(commands.Cog):
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "Event not found",
-                    f"Khong tim thay event ID {event_id} trong server.",
+                    f"Event ID {event_id} not found in this server.",
                 )
             )
         return event
@@ -158,7 +162,7 @@ class CtfCog(commands.Cog):
         events = await self.repo.list_ctf_events(interaction.guild.id)
         if not events:
             await interaction.response.send_message(
-                embed=build_simple_embed("No active CTF", "Chua co giai nao."),
+                embed=build_simple_embed("No active CTF", "No events joined yet."),
             )
             return
 
@@ -182,7 +186,7 @@ class CtfCog(commands.Cog):
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "Admin only",
-                    "Chi admin moi duoc dung lenh nay.",
+                    "Only admins can use this command.",
                 )
             )
             return
@@ -197,7 +201,7 @@ class CtfCog(commands.Cog):
             await interaction.followup.send(
                 embed=build_simple_embed(
                     "Missing permissions",
-                    "Bot can thieu quyen Manage Channels.",
+                    "Bot may be missing Manage Channels permission.",
                 )
             )
             return
@@ -205,7 +209,7 @@ class CtfCog(commands.Cog):
             await interaction.followup.send(
                 embed=build_simple_embed(
                     "Hide error",
-                    "Khong the an category/channels. Thu lai sau.",
+                    "Unable to hide category/channels. Try again later.",
                 )
             )
             return
@@ -213,7 +217,7 @@ class CtfCog(commands.Cog):
         await interaction.followup.send(
             embed=build_simple_embed(
                 "Hidden",
-                f"Da an category `{event.event_title}`.",
+                f"Category `{event.event_title}` is now hidden.",
             )
         )
 
@@ -224,6 +228,95 @@ class CtfCog(commands.Cog):
         self, interaction: discord.Interaction, event_id: int | None = None
     ) -> None:
         await self._handle_hidden(interaction, event_id)
+
+    @ctf.command(name="remove", description="Remove CTF category and data")
+    @app_commands.describe(
+        event_id="CTFtime event ID (required if multiple)",
+        password="Remove password",
+    )
+    @app_commands.default_permissions(administrator=True)
+    async def remove(
+        self,
+        interaction: discord.Interaction,
+        event_id: int | None = None,
+        password: str | None = None,
+    ) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+                ephemeral=True,
+            )
+            return
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Admin only",
+                    "Only admins can use this command.",
+                )
+                ,
+                ephemeral=True,
+            )
+            return
+
+        if not CTF_REMOVE_PASSWORD:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Missing config",
+                    "CTF_REMOVE_PASSWORD is not set in .env.",
+                ),
+                ephemeral=True,
+            )
+            return
+        if password != CTF_REMOVE_PASSWORD:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Wrong password",
+                    "Incorrect password.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        event = await self._resolve_event(interaction, event_id)
+        if event is None:
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            await delete_ctf_category_and_channels(
+                interaction.guild, event.category_id
+            )
+        except discord.Forbidden:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Missing permissions",
+                    "Bot may be missing Manage Channels permission.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except Exception:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Remove error",
+                    "Unable to delete category/channels. Try again later.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        await self.repo.delete_ctf_event(
+            interaction.guild.id, event.ctftime_event_id
+        )
+
+        await interaction.followup.send(
+            embed=build_simple_embed(
+                "Removed",
+                f"Deleted category and data for `{event.event_title}`.",
+            ),
+            ephemeral=True,
+        )
 
 
 async def setup(bot: commands.Bot) -> None:

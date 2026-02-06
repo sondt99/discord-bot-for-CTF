@@ -1,30 +1,30 @@
 # Discord CTF Bot
 
-Bot Discord cho CTF: lay thong tin giai tu CTFtime, tao category/channel, va theo doi scoreboard realtime (CTFd/rCTF).
+Discord bot for CTFs: fetches events from CTFtime, creates categories/channels, and tracks realtime scoreboard updates (CTFd/rCTF).
 
-## Setup nhanh
+## Quick setup
 
-1. Tao file `.env` tu `.env.example` va dien token.
-2. Cai dependency:
+1. Create `.env` from `.env.example` and fill in the token.
+2. Install dependencies:
 
 ```
 pip install -r requirements.txt
 playwright install
 ```
 
-3. Chay bot:
+3. Run the bot:
 
 ```
 python -m bot.main
 ```
 
-## Lenh
+## Commands
 
-- `/ctf upcoming [limit]` — danh sach CTF sap toi (embed + nut chuyen trang).
-- `/ctf join <event_id>` — tao category + cac kenh theo ten giai.
-- `/scoreboard <type> <url> [auth_token]` — cau hinh scoreboard.
+- `/ctf upcoming [limit]` — list upcoming CTFs (embed + pagination).
+- `/ctf join <event_id>` — create category + channels for the event.
+- `/scoreboard <type> <url> [auth_token]` — configure scoreboard polling.
 
-## Luu y
+## Notes
 
-- Bot chi dung embed cho moi phan hoi.
-- Can quyen `manage_channels` de tao category/kenh.
+- The bot responds using embeds only.
+- Requires `manage_channels` to create categories/channels.

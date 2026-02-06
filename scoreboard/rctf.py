@@ -14,10 +14,10 @@ load_dotenv()
 URL = os.getenv("RCTF_URL")
 OUT = os.getenv("RCTF_OUT")
 if not URL or not OUT:
-    raise SystemExit("Thiếu biến .env: cần RCTF_URL và RCTF_OUT (xem .env.example)")
+    raise SystemExit("Missing .env: requires RCTF_URL and RCTF_OUT (see .env.example)")
 OUT = Path(OUT)
 
-# Heuristic: bắt các request có chữ liên quan leaderboard/score
+# Heuristic: capture requests related to leaderboard/score
 PAT = re.compile(r"(score|scores|leader|leaderboard|standing|rank)", re.I)
 
 def main():
@@ -47,10 +47,10 @@ def main():
         browser.close()
 
     if not captured:
-        print("[-] Không bắt được JSON nào. Có thể API trả HTML/WS hoặc bị chặn.")
+        print("[-] No JSON captured. API may return HTML/WS or be blocked.")
         return
 
-    # lưu cái “khả nghi nhất” (cái cuối cùng thường là data bảng)
+    # save the most likely one (usually the last response contains the table)
     OUT.write_text(json.dumps(captured[-1], ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[+] Saved to {OUT.resolve()}")
 

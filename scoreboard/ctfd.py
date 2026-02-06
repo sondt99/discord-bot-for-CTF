@@ -12,11 +12,11 @@ load_dotenv()
 BASE = os.getenv("CTFD_BASE_URL")
 OUT = os.getenv("CTFD_OUT")
 if not BASE or not OUT:
-    raise SystemExit("Thiếu biến .env: cần CTFD_BASE_URL và CTFD_OUT (xem .env.example)")
+    raise SystemExit("Missing .env: requires CTFD_BASE_URL and CTFD_OUT (see .env.example)")
 BASE = BASE.rstrip("/") + "/"
 OUT = Path(OUT)
 
-# Một số endpoint hay gặp
+# Common endpoints to try
 CANDIDATES = [
     "/api/v1/scoreboard",
     "/api/v1/scoreboard?count=1000",
@@ -26,9 +26,9 @@ CANDIDATES = [
 
 def looks_like_ctfd_scoreboard(obj) -> bool:
     """
-    Heuristic nhận diện JSON scoreboard CTFd.
-    Thường có dạng: {"success": true, "data": [...]}
-    Mỗi entry thường có name/score/(pos|place|rank) ...
+    Heuristic to detect CTFd scoreboard JSON.
+    Usually: {"success": true, "data": [...]}
+    Each entry often has name/score/(pos|place|rank) ...
     """
     if not isinstance(obj, dict):
         return False
@@ -41,7 +41,7 @@ def looks_like_ctfd_scoreboard(obj) -> bool:
         return False
 
     keys = set(data[0].keys())
-    # name + score là combo hay nhất
+    # name + score is the most common combo
     return ("name" in keys or "team" in keys) and ("score" in keys or "points" in keys)
 
 def main():
@@ -55,7 +55,7 @@ def main():
             r = s.get(url, timeout=20)
             ct = (r.headers.get("content-type") or "").lower()
             if "application/json" not in ct:
-                # có server vẫn trả text/json
+                # some servers return text/json
                 if not re.search(r"json", ct):
                     continue
             obj = r.json()
@@ -67,8 +67,8 @@ def main():
             continue
 
     if not found:
-        print("[-] Không tìm thấy endpoint JSON scoreboard trong danh sách thử.")
-        print("   Gợi ý: thử mở /scoreboard trên trình duyệt, xem Network/XHR để biết endpoint thật.")
+        print("[-] Could not find a JSON scoreboard endpoint in the candidate list.")
+        print("   Tip: open /scoreboard in the browser and check Network/XHR for the real endpoint.")
         return
 
     OUT.write_text(json.dumps(found, ensure_ascii=False, indent=2), encoding="utf-8")
