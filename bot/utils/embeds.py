@@ -68,15 +68,23 @@ def build_scoreboard_embed(
     embed = discord.Embed(title="Scoreboard Update", color=discord.Color.gold())
     embed.add_field(name="Source", value=source_url, inline=False)
 
-    lines = []
-    for entry in entries[:top_n]:
-        lines.append(f"{entry['pos']}. {entry['name']} — {entry['score']}")
-    embed.add_field(name=f"Top {min(top_n, len(entries))}", value="\n".join(lines) or "N/A", inline=False)
+    if entries:
+        if len(entries) == 1:
+            entry = entries[0]
+            embed.add_field(
+                name="Team",
+                value=f"{entry['name']} — {entry['score']} (pos {entry['pos']})",
+                inline=False,
+            )
+        else:
+            lines = []
+            for entry in entries[:top_n]:
+                lines.append(f"{entry['pos']}. {entry['name']} — {entry['score']}")
+            embed.add_field(name="Scores", value="\n".join(lines), inline=False)
 
     if changes:
         embed.add_field(name="Changes", value="\n".join(changes[:5]), inline=False)
 
-    embed.timestamp = datetime.utcnow()
     return embed
 
 

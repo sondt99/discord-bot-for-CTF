@@ -55,10 +55,11 @@ class ScoreboardCog(commands.Cog):
                 embed=build_simple_embed("Guild only", "Use this in a server."),
             )
             return
+        await interaction.response.defer()
 
         events = await self.repo.list_ctf_events(interaction.guild.id)
         if not events:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=build_simple_embed(
                     "No active CTF",
                     "Run /ctf join first to create channels.",
@@ -70,7 +71,7 @@ class ScoreboardCog(commands.Cog):
             if len(events) == 1:
                 event = events[0]
             else:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     embed=build_simple_embed(
                         "Need event ID",
                         "Multiple events in this server. Please provide event_id.",
@@ -82,7 +83,7 @@ class ScoreboardCog(commands.Cog):
                 (e for e in events if e.ctftime_event_id == event_id), None
             )
             if event is None:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     embed=build_simple_embed(
                         "Event not found",
                         f"Event ID {event_id} not found in this server.",
@@ -92,7 +93,7 @@ class ScoreboardCog(commands.Cog):
 
         scoreboard_channel_id = event.channels.get("Scoreboard")
         if not scoreboard_channel_id:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=build_simple_embed(
                     "Missing channel", "Scoreboard channel not found."
                 )
@@ -109,7 +110,7 @@ class ScoreboardCog(commands.Cog):
             scoreboard_channel_id=scoreboard_channel_id,
         )
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=build_simple_embed(
                 "Scoreboard configured",
                 (

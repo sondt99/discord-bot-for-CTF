@@ -19,6 +19,11 @@ class CtfBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         self.repo = Repository(DATABASE_PATH)
 
+    async def on_message(self, message: discord.Message) -> None:
+        if message.guild is None:
+            return
+        await self.process_commands(message)
+
     async def setup_hook(self) -> None:
         await init_db(DATABASE_PATH)
         await self.load_extension("bot.cogs.ctf")
