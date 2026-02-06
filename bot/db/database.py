@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS scoreboard_config (
   type TEXT NOT NULL,
   url TEXT NOT NULL,
   auth_token TEXT,
+  team_name TEXT,
   scoreboard_channel_id INTEGER NOT NULL,
   PRIMARY KEY (guild_id, ctftime_event_id)
 );
@@ -89,6 +90,15 @@ async def _migrate_ctf_events(db: aiosqlite.Connection) -> None:
     )
     await db.execute("DROP TABLE ctf_events")
     await db.execute("ALTER TABLE ctf_events_new RENAME TO ctf_events")
+
+
+async def _ensure_column(
+    db: aiosqlite.Connection, table: str, column: str, column_type: str
+) -> None:
+    info = await _table_info(db, table)
+    if any(row[1] == column for row in info):
+        return
+    await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}")
 
 
 async def _migrate_scoreboard_config(db: aiosqlite.Connection) -> None:
@@ -164,4 +174,5 @@ async def init_db(db_path: str) -> None:
         await _migrate_scoreboard_config(db)
         await _migrate_scoreboard_state(db)
         await db.executescript(SCHEMA)
+        await _ensure_column(db, "scoreboard_config", "team_name", "TEXT")
         await db.commit()

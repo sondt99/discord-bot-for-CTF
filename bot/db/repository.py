@@ -24,6 +24,7 @@ class ScoreboardConfig:
     type: str
     url: str
     auth_token: str | None
+    team_name: str | None
     scoreboard_channel_id: int
 
 
@@ -158,18 +159,20 @@ class Repository:
         type_name: str,
         url: str,
         auth_token: str | None,
+        team_name: str | None,
         scoreboard_channel_id: int,
     ) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
                 INSERT INTO scoreboard_config
-                  (guild_id, ctftime_event_id, type, url, auth_token, scoreboard_channel_id)
-                VALUES (?, ?, ?, ?, ?, ?)
+                  (guild_id, ctftime_event_id, type, url, auth_token, team_name, scoreboard_channel_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(guild_id, ctftime_event_id) DO UPDATE SET
                   type=excluded.type,
                   url=excluded.url,
                   auth_token=excluded.auth_token,
+                  team_name=excluded.team_name,
                   scoreboard_channel_id=excluded.scoreboard_channel_id
                 """,
                 (
@@ -178,6 +181,7 @@ class Repository:
                     type_name,
                     url,
                     auth_token,
+                    team_name,
                     scoreboard_channel_id,
                 ),
             )
@@ -189,7 +193,7 @@ class Repository:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT guild_id, ctftime_event_id, type, url, auth_token, scoreboard_channel_id
+                SELECT guild_id, ctftime_event_id, type, url, auth_token, team_name, scoreboard_channel_id
                 FROM scoreboard_config WHERE guild_id=? AND ctftime_event_id=?
                 """,
                 (guild_id, ctftime_event_id),
@@ -204,14 +208,15 @@ class Repository:
             type=row[2],
             url=row[3],
             auth_token=row[4],
-            scoreboard_channel_id=row[5],
+            team_name=row[5],
+            scoreboard_channel_id=row[6],
         )
 
     async def list_scoreboard_configs(self) -> list[ScoreboardConfig]:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT guild_id, ctftime_event_id, type, url, auth_token, scoreboard_channel_id
+                SELECT guild_id, ctftime_event_id, type, url, auth_token, team_name, scoreboard_channel_id
                 FROM scoreboard_config
                 """
             )
@@ -224,7 +229,8 @@ class Repository:
                 type=row[2],
                 url=row[3],
                 auth_token=row[4],
-                scoreboard_channel_id=row[5],
+                team_name=row[5],
+                scoreboard_channel_id=row[6],
             )
             for row in rows
         ]

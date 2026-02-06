@@ -7,7 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from bot.config import SCOREBOARD_POLL_SECONDS, SCOREBOARD_TOP_N
+from bot.config import SCOREBOARD_POLL_SECONDS, SCOREBOARD_TEAM_NAME, SCOREBOARD_TOP_N
 from bot.db.repository import Repository
 from bot.services.scoreboard_fetcher import (
     fetch_ctfd_scoreboard,
@@ -22,6 +22,7 @@ class ScoreboardCog(commands.Cog):
         self.bot = bot
         self.repo = repo
         self.scoreboard_loop.start()
+        self.bot.loop.create_task(self._run_initial_check())
 
     def cog_unload(self) -> None:
         self.scoreboard_loop.cancel()
@@ -31,6 +32,7 @@ class ScoreboardCog(commands.Cog):
         type="Scoreboard type (ctfd or rctf)",
         url="Scoreboard base URL",
         auth_token="Optional auth token",
+        team="Team name to track (optional)",
         event_id="CTFtime event ID (required if multiple)",
     )
     @app_commands.choices(
@@ -45,6 +47,7 @@ class ScoreboardCog(commands.Cog):
         type: app_commands.Choice[str],
         url: str,
         auth_token: str | None = None,
+        team: str | None = None,
         event_id: int | None = None,
     ) -> None:
         if interaction.guild is None:
@@ -102,19 +105,34 @@ class ScoreboardCog(commands.Cog):
             type_name=type.value,
             url=url,
             auth_token=auth_token,
+            team_name=team or SCOREBOARD_TEAM_NAME,
             scoreboard_channel_id=scoreboard_channel_id,
         )
 
         await interaction.response.send_message(
             embed=build_simple_embed(
                 "Scoreboard configured",
-                f"Event ID: {event.ctftime_event_id}\nType: {type.name}\nURL: {url}",
+                (
+                    f"Event ID: {event.ctftime_event_id}\nType: {type.name}\nURL: {url}"
+                    + (
+                        f"\nTeam: {team or SCOREBOARD_TEAM_NAME}"
+                        if (team or SCOREBOARD_TEAM_NAME)
+                        else ""
+                    )
+                ),
             )
         )
+
+    async def _run_initial_check(self) -> None:
+        await self.bot.wait_until_ready()
+        await self._run_scoreboard_checks()
 
     @tasks.loop(seconds=SCOREBOARD_POLL_SECONDS)
     async def scoreboard_loop(self) -> None:
         await self.bot.wait_until_ready()
+        await self._run_scoreboard_checks()
+
+    async def _run_scoreboard_checks(self) -> None:
         configs = await self.repo.list_scoreboard_configs()
 
         for config in configs:
@@ -141,6 +159,18 @@ class ScoreboardCog(commands.Cog):
                     continue
             except Exception:
                 continue
+
+            tracked_team = config.team_name or SCOREBOARD_TEAM_NAME
+            tracked_entry = None
+            if tracked_team:
+                lower_name = tracked_team.lower()
+                for entry in entries:
+                    if entry["name"].lower() == lower_name:
+                        tracked_entry = entry
+                        break
+                if tracked_entry is None:
+                    continue
+                entries = [tracked_entry]
 
             payload_hash = make_payload_hash(entries)
             last_state = await self.repo.get_scoreboard_state(
