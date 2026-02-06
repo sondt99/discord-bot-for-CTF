@@ -1,28 +1,40 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+import re
 
 import discord
 
+from bot.config import TIMEZONE
 
 DEFAULT_THUMBNAIL_URL = "https://img.freepik.com/free-vector/square-bronze-frame-white-background-vector_53876-170731.jpg"
+
+
+def _parse_timezone_offset(value: str) -> timezone:
+    match = re.fullmatch(r"UTC([+-])(\d{1,2})", value.strip())
+    if not match:
+        return timezone.utc
+    sign = 1 if match.group(1) == "+" else -1
+    hours = int(match.group(2))
+    return timezone(sign * timedelta(hours=hours))
 
 
 def _format_time_range(event: dict) -> str:
     start = event.get("start")
     finish = event.get("finish")
-    if start and finish:
-        return f"{start} → {finish}"
-    return "N/A"
+    if not start or not finish:
+        return "N/A"
+
+    tz = _parse_timezone_offset(TIMEZONE or "UTC+0")
+    start_dt = datetime.fromisoformat(start).astimezone(tz)
+    finish_dt = datetime.fromisoformat(finish).astimezone(tz)
+    return f"{start_dt:%Y-%m-%d %H:%M} → {finish_dt:%Y-%m-%d %H:%M}"
 
 
 def build_event_embed(event: dict, index: int | None = None) -> discord.Embed:
     title = event.get("title") or "CTF Event"
     embed_title = f"{index}. {title}" if index is not None else title
     embed = discord.Embed(title=embed_title, color=discord.Color.gold())
-    embed.add_field(name="CTFtime", value=event.get("ctftime_url") or "N/A", inline=False)
-    embed.add_field(name="URL", value=event.get("url") or "N/A", inline=False)
-    embed.add_field(name="Format", value=event.get("format") or "N/A", inline=False)
     weight_value = event.get("weight")
     if weight_value is None:
         weight_text = "N/A"
@@ -30,8 +42,15 @@ def build_event_embed(event: dict, index: int | None = None) -> discord.Embed:
         weight_text = f"{weight_value:.2f}"
     else:
         weight_text = str(weight_value)
-    embed.add_field(name="Rating Weight", value=weight_text, inline=False)
+    embed.add_field(name="Format", value=event.get("format") or "N/A", inline=True)
+    embed.add_field(name="Rating Weight", value=weight_text, inline=True)
+
     embed.add_field(name="Time", value=_format_time_range(event), inline=False)
+
+    ctftime_url = event.get("ctftime_url")
+    site_url = event.get("url")
+    embed.add_field(name="CTFtime", value=ctftime_url or "N/A", inline=True)
+    embed.add_field(name="URL", value=site_url or "N/A", inline=True)
 
     logo = event.get("logo") or DEFAULT_THUMBNAIL_URL
     embed.set_thumbnail(url=logo)
@@ -78,5 +97,5 @@ def build_event_embeds_for_page(
         embeds.append(build_event_embed(event, index=idx))
 
     if embeds:
-        embeds[0].set_footer(text=f"Page {page + 1}/{total_pages}")
+        embeds[-1].set_footer(text=f"Page {page + 1}/{total_pages}")
     return embeds
