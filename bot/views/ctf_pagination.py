@@ -2,23 +2,30 @@ from __future__ import annotations
 
 import discord
 
-from bot.utils.embeds import build_event_embed
+from bot.utils.embeds import build_event_embeds_for_page
 
 
 class CtfPaginationView(discord.ui.View):
-    def __init__(self, events: list[dict], author_id: int, timeout: int = 180):
+    def __init__(
+        self,
+        events: list[dict],
+        author_id: int,
+        page_size: int = 3,
+        timeout: int = 180,
+    ):
         super().__init__(timeout=timeout)
         self.events = events
         self.author_id = author_id
+        self.page_size = page_size
         self.page = 0
         self.message: discord.Message | None = None
 
-    def _build_embed(self) -> discord.Embed:
-        return build_event_embed(self.events[self.page], self.page, len(self.events))
+    def _build_embeds(self) -> list[discord.Embed]:
+        return build_event_embeds_for_page(self.events, self.page, self.page_size)
 
     async def _update(self, interaction: discord.Interaction) -> None:
-        embed = self._build_embed()
-        await interaction.response.edit_message(embed=embed, view=self)
+        embeds = self._build_embeds()
+        await interaction.response.edit_message(embeds=embeds, view=self)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
@@ -40,7 +47,8 @@ class CtfPaginationView(discord.ui.View):
 
     @discord.ui.button(label="Next", style=discord.ButtonStyle.primary)
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-        if self.page < len(self.events) - 1:
+        max_page = max(0, (len(self.events) - 1) // self.page_size)
+        if self.page < max_page:
             self.page += 1
         await self._update(interaction)
 

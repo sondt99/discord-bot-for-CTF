@@ -21,17 +21,26 @@ class CtfCog(commands.Cog):
     @ctf.command(name="upcoming", description="List upcoming CTF events")
     @app_commands.describe(limit="Number of events to show (max 50)")
     async def upcoming(self, interaction: discord.Interaction, limit: int = 10) -> None:
-        limit = max(1, min(limit, 50))
+        limit = max(3, min(limit, 50))
         await interaction.response.defer()
-        events = await fetch_upcoming_events(limit=limit)
+        try:
+            events = await fetch_upcoming_events(limit=limit)
+        except Exception:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "CTFtime error",
+                    "Khong the lay danh sach giai. Thu lai sau.",
+                )
+            )
+            return
         if not events:
             await interaction.followup.send(
                 embed=build_simple_embed("No events", "No upcoming CTFs found.")
             )
             return
-        view = CtfPaginationView(events=events, author_id=interaction.user.id)
-        embed = build_event_embed(events[0], 0, len(events))
-        message = await interaction.followup.send(embed=embed, view=view)
+        view = CtfPaginationView(events=events, author_id=interaction.user.id, page_size=3)
+        embeds = view._build_embeds()
+        message = await interaction.followup.send(embeds=embeds, view=view)
         view.message = message
 
     @ctf.command(name="join", description="Create category and channels for a CTF")
@@ -56,12 +65,38 @@ class CtfCog(commands.Cog):
             return
 
         await interaction.response.defer()
-        event = await fetch_event(event_id)
+        try:
+            event = await fetch_event(event_id)
+        except Exception:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "CTFtime error",
+                    "Khong the lay thong tin giai. Kiem tra ID.",
+                )
+            )
+            return
         event_title = event.get("title") or f"CTF {event_id}"
 
-        category, channels = await create_ctf_category_and_channels(
-            interaction.guild, event_title
-        )
+        try:
+            category, channels = await create_ctf_category_and_channels(
+                interaction.guild, event_title
+            )
+        except discord.Forbidden:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Missing permissions",
+                    "Bot can thieu quyen Manage Channels.",
+                )
+            )
+            return
+        except Exception:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Setup error",
+                    "Khong the tao category/channels. Thu lai sau.",
+                )
+            )
+            return
 
         await self.repo.upsert_ctf_event(
             guild_id=interaction.guild.id,
