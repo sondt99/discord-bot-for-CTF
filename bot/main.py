@@ -18,6 +18,7 @@ class CtfBot(commands.Bot):
         intents.guilds = True
         super().__init__(command_prefix="!", intents=intents)
         self.repo = Repository(DATABASE_PATH)
+        self.backup_ready = asyncio.Event()
 
     async def on_message(self, message: discord.Message) -> None:
         if message.guild is None:

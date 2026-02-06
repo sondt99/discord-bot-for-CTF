@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+import tempfile
 
 import discord
 from discord.ext import commands
@@ -26,6 +27,9 @@ class AuditCog(commands.Cog):
                 await ensure_bot_admin_category(guild)
             except Exception:
                 continue
+            await self._restore_db_from_backup(guild)
+        if hasattr(self.bot, "backup_ready"):
+            self.bot.backup_ready.set()
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
@@ -84,6 +88,31 @@ class AuditCog(commands.Cog):
             f"Error: {error}",
         )
         await log_channel.send(embed=log_embed)
+
+    async def _restore_db_from_backup(self, guild: discord.Guild) -> None:
+        _, channels = await ensure_bot_admin_category(guild)
+        backup_channel = channels["backup"]
+        db_path = Path(DATABASE_PATH)
+        target_name = db_path.name
+
+        latest = None
+        async for message in backup_channel.history(limit=50):
+            for attachment in message.attachments:
+                if attachment.filename == target_name:
+                    latest = attachment
+                    break
+            if latest:
+                break
+
+        if latest is None:
+            return
+
+        data = await latest.read()
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(data)
+            tmp_path = Path(tmp.name)
+
+        tmp_path.replace(db_path)
 
 
 async def setup(bot: commands.Bot) -> None:

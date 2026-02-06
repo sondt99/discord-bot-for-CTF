@@ -134,6 +134,8 @@ class ScoreboardCog(commands.Cog):
         await self._run_scoreboard_checks()
 
     async def _run_scoreboard_checks(self) -> None:
+        if hasattr(self.bot, "backup_ready"):
+            await self.bot.backup_ready.wait()
         configs = await self.repo.list_scoreboard_configs()
 
         for config in configs:
