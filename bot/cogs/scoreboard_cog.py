@@ -31,6 +31,7 @@ class ScoreboardCog(commands.Cog):
         type="Scoreboard type (ctfd or rctf)",
         url="Scoreboard base URL",
         auth_token="Optional auth token",
+        event_id="CTFtime event ID (required if multiple)",
     )
     @app_commands.choices(
         type=[
@@ -44,37 +45,60 @@ class ScoreboardCog(commands.Cog):
         type: app_commands.Choice[str],
         url: str,
         auth_token: str | None = None,
+        event_id: int | None = None,
     ) -> None:
         if interaction.guild is None:
             await interaction.response.send_message(
                 embed=build_simple_embed("Guild only", "Use this in a server."),
-                ephemeral=True,
             )
             return
 
-        event = await self.repo.get_ctf_event(interaction.guild.id)
-        if not event:
+        events = await self.repo.list_ctf_events(interaction.guild.id)
+        if not events:
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "No active CTF",
                     "Run /ctf join first to create channels.",
-                ),
-                ephemeral=True,
+                )
             )
             return
+
+        if event_id is None:
+            if len(events) == 1:
+                event = events[0]
+            else:
+                await interaction.response.send_message(
+                    embed=build_simple_embed(
+                        "Need event ID",
+                        "Server co nhieu giai. Hay nhap event_id.",
+                    )
+                )
+                return
+        else:
+            event = next(
+                (e for e in events if e.ctftime_event_id == event_id), None
+            )
+            if event is None:
+                await interaction.response.send_message(
+                    embed=build_simple_embed(
+                        "Event not found",
+                        f"Khong tim thay event ID {event_id} trong server.",
+                    )
+                )
+                return
 
         scoreboard_channel_id = event.channels.get("Scoreboard")
         if not scoreboard_channel_id:
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "Missing channel", "Scoreboard channel not found."
-                ),
-                ephemeral=True,
+                )
             )
             return
 
         await self.repo.upsert_scoreboard_config(
             guild_id=interaction.guild.id,
+            ctftime_event_id=event.ctftime_event_id,
             type_name=type.value,
             url=url,
             auth_token=auth_token,
@@ -84,7 +108,7 @@ class ScoreboardCog(commands.Cog):
         await interaction.response.send_message(
             embed=build_simple_embed(
                 "Scoreboard configured",
-                f"Type: {type.name}\nURL: {url}",
+                f"Event ID: {event.ctftime_event_id}\nType: {type.name}\nURL: {url}",
             )
         )
 
@@ -94,7 +118,9 @@ class ScoreboardCog(commands.Cog):
         configs = await self.repo.list_scoreboard_configs()
 
         for config in configs:
-            event = await self.repo.get_ctf_event(config.guild_id)
+            event = await self.repo.get_ctf_event(
+                config.guild_id, config.ctftime_event_id
+            )
             if not event:
                 continue
 
@@ -117,7 +143,9 @@ class ScoreboardCog(commands.Cog):
                 continue
 
             payload_hash = make_payload_hash(entries)
-            last_state = await self.repo.get_scoreboard_state(config.guild_id)
+            last_state = await self.repo.get_scoreboard_state(
+                config.guild_id, config.ctftime_event_id
+            )
             if last_state and last_state.last_hash == payload_hash:
                 continue
 
@@ -145,7 +173,10 @@ class ScoreboardCog(commands.Cog):
                 await channel.send(embed=embed)
 
             await self.repo.upsert_scoreboard_state(
-                config.guild_id, payload_hash, json.dumps(entries, ensure_ascii=False)
+                config.guild_id,
+                config.ctftime_event_id,
+                payload_hash,
+                json.dumps(entries, ensure_ascii=False),
             )
 
 

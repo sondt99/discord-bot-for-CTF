@@ -20,6 +20,7 @@ class CtfEvent:
 @dataclass
 class ScoreboardConfig:
     guild_id: int
+    ctftime_event_id: int
     type: str
     url: str
     auth_token: str | None
@@ -29,6 +30,7 @@ class ScoreboardConfig:
 @dataclass
 class ScoreboardState:
     guild_id: int
+    ctftime_event_id: int
     last_hash: str | None
     last_payload: str | None
     updated_at: str
@@ -60,7 +62,7 @@ class Repository:
                 INSERT INTO ctf_events
                   (guild_id, ctftime_event_id, event_title, category_id, channels_json, start_time, finish_time, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(guild_id) DO UPDATE SET
+                ON CONFLICT(guild_id, ctftime_event_id) DO UPDATE SET
                   ctftime_event_id=excluded.ctftime_event_id,
                   event_title=excluded.event_title,
                   category_id=excluded.category_id,
@@ -82,14 +84,16 @@ class Repository:
             )
             await db.commit()
 
-    async def get_ctf_event(self, guild_id: int) -> CtfEvent | None:
+    async def get_ctf_event(
+        self, guild_id: int, ctftime_event_id: int
+    ) -> CtfEvent | None:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
                 SELECT guild_id, ctftime_event_id, event_title, category_id, channels_json, start_time, finish_time, created_at
-                FROM ctf_events WHERE guild_id=?
+                FROM ctf_events WHERE guild_id=? AND ctftime_event_id=?
                 """,
-                (guild_id,),
+                (guild_id, ctftime_event_id),
             )
             row = await cursor.fetchone()
             await cursor.close()
@@ -106,9 +110,35 @@ class Repository:
             created_at=row[7],
         )
 
+    async def list_ctf_events(self, guild_id: int) -> list[CtfEvent]:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT guild_id, ctftime_event_id, event_title, category_id, channels_json, start_time, finish_time, created_at
+                FROM ctf_events WHERE guild_id=? ORDER BY created_at DESC
+                """,
+                (guild_id,),
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        return [
+            CtfEvent(
+                guild_id=row[0],
+                ctftime_event_id=row[1],
+                event_title=row[2],
+                category_id=row[3],
+                channels=json.loads(row[4]),
+                start_time=row[5],
+                finish_time=row[6],
+                created_at=row[7],
+            )
+            for row in rows
+        ]
+
     async def upsert_scoreboard_config(
         self,
         guild_id: int,
+        ctftime_event_id: int,
         type_name: str,
         url: str,
         auth_token: str | None,
@@ -118,26 +148,35 @@ class Repository:
             await db.execute(
                 """
                 INSERT INTO scoreboard_config
-                  (guild_id, type, url, auth_token, scoreboard_channel_id)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(guild_id) DO UPDATE SET
+                  (guild_id, ctftime_event_id, type, url, auth_token, scoreboard_channel_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(guild_id, ctftime_event_id) DO UPDATE SET
                   type=excluded.type,
                   url=excluded.url,
                   auth_token=excluded.auth_token,
                   scoreboard_channel_id=excluded.scoreboard_channel_id
                 """,
-                (guild_id, type_name, url, auth_token, scoreboard_channel_id),
+                (
+                    guild_id,
+                    ctftime_event_id,
+                    type_name,
+                    url,
+                    auth_token,
+                    scoreboard_channel_id,
+                ),
             )
             await db.commit()
 
-    async def get_scoreboard_config(self, guild_id: int) -> ScoreboardConfig | None:
+    async def get_scoreboard_config(
+        self, guild_id: int, ctftime_event_id: int
+    ) -> ScoreboardConfig | None:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT guild_id, type, url, auth_token, scoreboard_channel_id
-                FROM scoreboard_config WHERE guild_id=?
+                SELECT guild_id, ctftime_event_id, type, url, auth_token, scoreboard_channel_id
+                FROM scoreboard_config WHERE guild_id=? AND ctftime_event_id=?
                 """,
-                (guild_id,),
+                (guild_id, ctftime_event_id),
             )
             row = await cursor.fetchone()
             await cursor.close()
@@ -145,17 +184,18 @@ class Repository:
             return None
         return ScoreboardConfig(
             guild_id=row[0],
-            type=row[1],
-            url=row[2],
-            auth_token=row[3],
-            scoreboard_channel_id=row[4],
+            ctftime_event_id=row[1],
+            type=row[2],
+            url=row[3],
+            auth_token=row[4],
+            scoreboard_channel_id=row[5],
         )
 
     async def list_scoreboard_configs(self) -> list[ScoreboardConfig]:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT guild_id, type, url, auth_token, scoreboard_channel_id
+                SELECT guild_id, ctftime_event_id, type, url, auth_token, scoreboard_channel_id
                 FROM scoreboard_config
                 """
             )
@@ -164,40 +204,47 @@ class Repository:
         return [
             ScoreboardConfig(
                 guild_id=row[0],
-                type=row[1],
-                url=row[2],
-                auth_token=row[3],
-                scoreboard_channel_id=row[4],
+                ctftime_event_id=row[1],
+                type=row[2],
+                url=row[3],
+                auth_token=row[4],
+                scoreboard_channel_id=row[5],
             )
             for row in rows
         ]
 
     async def upsert_scoreboard_state(
-        self, guild_id: int, last_hash: str | None, last_payload: str | None
+        self,
+        guild_id: int,
+        ctftime_event_id: int,
+        last_hash: str | None,
+        last_payload: str | None,
     ) -> None:
         updated_at = _utc_now_iso()
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                INSERT INTO scoreboard_state (guild_id, last_hash, last_payload, updated_at)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(guild_id) DO UPDATE SET
+                INSERT INTO scoreboard_state (guild_id, ctftime_event_id, last_hash, last_payload, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(guild_id, ctftime_event_id) DO UPDATE SET
                   last_hash=excluded.last_hash,
                   last_payload=excluded.last_payload,
                   updated_at=excluded.updated_at
                 """,
-                (guild_id, last_hash, last_payload, updated_at),
+                (guild_id, ctftime_event_id, last_hash, last_payload, updated_at),
             )
             await db.commit()
 
-    async def get_scoreboard_state(self, guild_id: int) -> ScoreboardState | None:
+    async def get_scoreboard_state(
+        self, guild_id: int, ctftime_event_id: int
+    ) -> ScoreboardState | None:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT guild_id, last_hash, last_payload, updated_at
-                FROM scoreboard_state WHERE guild_id=?
+                SELECT guild_id, ctftime_event_id, last_hash, last_payload, updated_at
+                FROM scoreboard_state WHERE guild_id=? AND ctftime_event_id=?
                 """,
-                (guild_id,),
+                (guild_id, ctftime_event_id),
             )
             row = await cursor.fetchone()
             await cursor.close()
@@ -205,7 +252,8 @@ class Repository:
             return None
         return ScoreboardState(
             guild_id=row[0],
-            last_hash=row[1],
-            last_payload=row[2],
-            updated_at=row[3],
+            ctftime_event_id=row[1],
+            last_hash=row[2],
+            last_payload=row[3],
+            updated_at=row[4],
         )

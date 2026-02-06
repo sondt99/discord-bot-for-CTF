@@ -6,7 +6,10 @@ from discord.ext import commands
 
 from bot.db.repository import Repository
 from bot.services.ctftime import fetch_event, fetch_upcoming_events
-from bot.services.guild_setup import create_ctf_category_and_channels
+from bot.services.guild_setup import (
+    create_ctf_category_and_channels,
+    hide_ctf_category_and_channels,
+)
 from bot.utils.embeds import build_event_embed, build_simple_embed
 from bot.views.ctf_pagination import CtfPaginationView
 
@@ -49,18 +52,16 @@ class CtfCog(commands.Cog):
         if interaction.guild is None:
             await interaction.response.send_message(
                 embed=build_simple_embed("Guild only", "Use this in a server."),
-                ephemeral=True,
             )
             return
 
-        existing = await self.repo.get_ctf_event(interaction.guild.id)
+        existing = await self.repo.get_ctf_event(interaction.guild.id, event_id)
         if existing:
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "CTF already configured",
-                    f"Current event: {existing.event_title} (ID {existing.ctftime_event_id}).",
+                    f"Event da co: {existing.event_title} (ID {existing.ctftime_event_id}).",
                 ),
-                ephemeral=True,
             )
             return
 
@@ -114,6 +115,115 @@ class CtfCog(commands.Cog):
                 f"Created category `{category.name}` with {len(channels)} channels.",
             )
         )
+
+    async def _resolve_event(
+        self, interaction: discord.Interaction, event_id: int | None
+    ):
+        events = await self.repo.list_ctf_events(interaction.guild.id)
+        if not events:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "No active CTF",
+                    "Run /ctf join first to create channels.",
+                )
+            )
+            return None
+        if event_id is None:
+            if len(events) == 1:
+                return events[0]
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Need event ID",
+                    "Server co nhieu giai. Hay nhap event_id.",
+                )
+            )
+            return None
+        event = next((e for e in events if e.ctftime_event_id == event_id), None)
+        if event is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Event not found",
+                    f"Khong tim thay event ID {event_id} trong server.",
+                )
+            )
+        return event
+
+    @ctf.command(name="list", description="List joined CTF events")
+    async def list_events(self, interaction: discord.Interaction) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+            )
+            return
+        events = await self.repo.list_ctf_events(interaction.guild.id)
+        if not events:
+            await interaction.response.send_message(
+                embed=build_simple_embed("No active CTF", "Chua co giai nao."),
+            )
+            return
+
+        lines = []
+        for event in events:
+            lines.append(f"{event.ctftime_event_id} - {event.event_title}")
+
+        await interaction.response.send_message(
+            embed=build_simple_embed("CTF Events", "\n".join(lines)),
+        )
+
+    async def _handle_hidden(
+        self, interaction: discord.Interaction, event_id: int | None
+    ) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+            )
+            return
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Admin only",
+                    "Chi admin moi duoc dung lenh nay.",
+                )
+            )
+            return
+        event = await self._resolve_event(interaction, event_id)
+        if event is None:
+            return
+
+        await interaction.response.defer()
+        try:
+            await hide_ctf_category_and_channels(interaction.guild, event.category_id)
+        except discord.Forbidden:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Missing permissions",
+                    "Bot can thieu quyen Manage Channels.",
+                )
+            )
+            return
+        except Exception:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Hide error",
+                    "Khong the an category/channels. Thu lai sau.",
+                )
+            )
+            return
+
+        await interaction.followup.send(
+            embed=build_simple_embed(
+                "Hidden",
+                f"Da an category `{event.event_title}`.",
+            )
+        )
+
+    @ctf.command(name="hidden", description="Hide CTF category from non-admins")
+    @app_commands.describe(event_id="CTFtime event ID (required if multiple)")
+    @app_commands.default_permissions(administrator=True)
+    async def hidden(
+        self, interaction: discord.Interaction, event_id: int | None = None
+    ) -> None:
+        await self._handle_hidden(interaction, event_id)
 
 
 async def setup(bot: commands.Bot) -> None:

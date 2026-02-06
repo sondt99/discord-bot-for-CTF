@@ -7,8 +7,6 @@ import discord
 
 from bot.config import TIMEZONE
 
-DEFAULT_THUMBNAIL_URL = "https://img.freepik.com/free-vector/square-bronze-frame-white-background-vector_53876-170731.jpg"
-
 
 def _parse_timezone_offset(value: str) -> timezone:
     match = re.fullmatch(r"UTC([+-])(\d{1,2})", value.strip())
@@ -52,8 +50,9 @@ def build_event_embed(event: dict, index: int | None = None) -> discord.Embed:
     embed.add_field(name="CTFtime", value=ctftime_url or "N/A", inline=True)
     embed.add_field(name="URL", value=site_url or "N/A", inline=True)
 
-    logo = event.get("logo") or DEFAULT_THUMBNAIL_URL
-    embed.set_thumbnail(url=logo)
+    logo = event.get("logo")
+    if logo:
+        embed.set_thumbnail(url=logo)
 
     return embed
 

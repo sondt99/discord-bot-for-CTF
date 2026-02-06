@@ -49,3 +49,19 @@ async def create_ctf_category_and_channels(
         channels[channel_name] = channel.id
 
     return category, channels
+
+
+async def hide_ctf_category_and_channels(
+    guild: discord.Guild, category_id: int
+) -> None:
+    category = guild.get_channel(category_id)
+    if not isinstance(category, discord.CategoryChannel):
+        raise ValueError("Category not found.")
+
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(view_channel=False)
+    }
+    await category.edit(overwrites=overwrites)
+
+    for channel in category.channels:
+        await channel.edit(overwrites=overwrites)
