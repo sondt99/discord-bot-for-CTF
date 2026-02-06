@@ -17,6 +17,10 @@ CHANNELS = [
     "Scoreboard",
 ]
 
+BOT_CATEGORY_NAME = "BOT"
+BOT_LOG_CHANNEL = "log"
+BOT_BACKUP_CHANNEL = "backup"
+
 
 def _sanitize_category_name(name: str) -> str:
     name = re.sub(r"\s+", " ", name).strip()
@@ -77,3 +81,29 @@ async def delete_ctf_category_and_channels(
     for channel in list(category.channels):
         await channel.delete()
     await category.delete()
+
+
+async def ensure_bot_admin_category(
+    guild: discord.Guild,
+) -> tuple[discord.CategoryChannel, dict[str, discord.TextChannel]]:
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(view_channel=False),
+    }
+    if guild.me is not None:
+        overwrites[guild.me] = discord.PermissionOverwrite(
+            view_channel=True, send_messages=True, manage_channels=True
+        )
+
+    category = discord.utils.get(guild.categories, name=BOT_CATEGORY_NAME)
+    if category is None:
+        category = await guild.create_category(name=BOT_CATEGORY_NAME, overwrites=overwrites)
+
+    log_channel = discord.utils.get(category.text_channels, name=BOT_LOG_CHANNEL)
+    if log_channel is None:
+        log_channel = await category.create_text_channel(name=BOT_LOG_CHANNEL)
+
+    backup_channel = discord.utils.get(category.text_channels, name=BOT_BACKUP_CHANNEL)
+    if backup_channel is None:
+        backup_channel = await category.create_text_channel(name=BOT_BACKUP_CHANNEL)
+
+    return category, {"log": log_channel, "backup": backup_channel}
