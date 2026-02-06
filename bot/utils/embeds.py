@@ -50,10 +50,6 @@ def build_event_embed(event: dict, index: int | None = None) -> discord.Embed:
     embed.add_field(name="CTFtime", value=ctftime_url or "N/A", inline=True)
     embed.add_field(name="URL", value=site_url or "N/A", inline=True)
 
-    logo = event.get("logo")
-    if logo:
-        embed.set_thumbnail(url=logo)
-
     return embed
 
 
@@ -84,17 +80,39 @@ def build_scoreboard_embed(
     return embed
 
 
-def build_event_embeds_for_page(
+def _format_event_block(event: dict) -> str:
+    weight_value = event.get("weight")
+    if weight_value is None:
+        weight_text = "N/A"
+    elif isinstance(weight_value, (int, float)):
+        weight_text = f"{weight_value:.2f}"
+    else:
+        weight_text = str(weight_value)
+    title = event.get("title") or "CTF Event"
+    lines = [
+        f"Format: {event.get('format') or 'N/A'} | Rating Weight: {weight_text}",
+        f"Time: {_format_time_range(event)}",
+        f"CTFtime: {event.get('ctftime_url') or 'N/A'}",
+        f"URL: {event.get('url') or 'N/A'}",
+        "---",
+    ]
+    return "\n".join(lines)
+
+
+def build_events_page_embed(
     events: list[dict], page: int, page_size: int
-) -> list[discord.Embed]:
+) -> discord.Embed:
     total_pages = max(1, (len(events) + page_size - 1) // page_size)
     start_index = page * page_size
     slice_events = events[start_index : start_index + page_size]
 
-    embeds = []
-    for idx, event in enumerate(slice_events, start=start_index + 1):
-        embeds.append(build_event_embed(event, index=idx))
+    embed = discord.Embed(title="Upcoming CTFs", color=discord.Color.gold())
+    for event in slice_events:
+        embed.add_field(
+            name=event.get("title") or "CTF Event",
+            value=_format_event_block(event),
+            inline=False,
+        )
 
-    if embeds:
-        embeds[-1].set_footer(text=f"Page {page + 1}/{total_pages}")
-    return embeds
+    embed.set_footer(text=f"Page {page + 1}/{total_pages}")
+    return embed

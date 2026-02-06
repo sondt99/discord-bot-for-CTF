@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import discord
 
-from bot.utils.embeds import build_event_embeds_for_page
+from bot.utils.embeds import build_events_page_embed
 
 
 class CtfPaginationView(discord.ui.View):
@@ -20,11 +20,12 @@ class CtfPaginationView(discord.ui.View):
         self.page = 0
         self.message: discord.Message | None = None
 
-    def _build_embeds(self) -> list[discord.Embed]:
-        return build_event_embeds_for_page(self.events, self.page, self.page_size)
+    def build_page_payload(self) -> list[discord.Embed]:
+        embed = build_events_page_embed(self.events, self.page, self.page_size)
+        return [embed]
 
     async def _update(self, interaction: discord.Interaction) -> None:
-        embeds = self._build_embeds()
+        embeds = self.build_page_payload()
         await interaction.response.edit_message(embeds=embeds, view=self)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:

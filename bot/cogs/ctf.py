@@ -44,7 +44,7 @@ class CtfCog(commands.Cog):
             )
             return
         view = CtfPaginationView(events=events, author_id=interaction.user.id, page_size=3)
-        embeds = view._build_embeds()
+        embeds = view.build_page_payload()
         message = await interaction.followup.send(embeds=embeds, view=view)
         view.message = message
 
