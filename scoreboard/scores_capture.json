@@ -1,0 +1,8 @@
+{
+  "url": "https://platform.lac.tf/api/v1/leaderboard/now?limit=100&offset=0",
+  "data": {
+    "kind": "badNotStarted",
+    "message": "The CTF has not started yet.",
+    "data": null
+  }
+}

@@ -1,0 +1,512 @@
+{
+  "url": "https://demo.ctfd.io/api/v1/scoreboard",
+  "data": {
+    "success": true,
+    "data": [
+      {
+        "pos": 1,
+        "account_id": 1,
+        "account_url": "/teams/1",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Ennui185",
+        "score": 364,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 6,
+            "oauth_id": null,
+            "name": "Willie",
+            "score": -8,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 9,
+            "oauth_id": null,
+            "name": "Louis",
+            "score": 160,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 17,
+            "oauth_id": null,
+            "name": "Joshua",
+            "score": 6,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 28,
+            "oauth_id": null,
+            "name": "Jane",
+            "score": 81,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 32,
+            "oauth_id": null,
+            "name": "Tammy",
+            "score": 22,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 37,
+            "oauth_id": null,
+            "name": "Amanda",
+            "score": 103,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 42,
+            "oauth_id": null,
+            "name": "Joan",
+            "score": 7,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 47,
+            "oauth_id": null,
+            "name": "Daniel",
+            "score": -7,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 2,
+        "account_id": 6,
+        "account_url": "/teams/6",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Art117",
+        "score": 169,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 5,
+            "oauth_id": null,
+            "name": "Carolyn",
+            "score": -2,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 11,
+            "oauth_id": null,
+            "name": "Steven",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 14,
+            "oauth_id": null,
+            "name": "Raymond",
+            "score": 42,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 15,
+            "oauth_id": null,
+            "name": "Mildred",
+            "score": -5,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 23,
+            "oauth_id": null,
+            "name": "Christopher",
+            "score": 149,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 30,
+            "oauth_id": null,
+            "name": "Sharon",
+            "score": -4,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 33,
+            "oauth_id": null,
+            "name": "Eric",
+            "score": -11,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 3,
+        "account_id": 5,
+        "account_url": "/teams/5",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Wes499",
+        "score": 147,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 3,
+            "oauth_id": null,
+            "name": "Helen",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 4,
+            "oauth_id": null,
+            "name": "George",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 22,
+            "oauth_id": null,
+            "name": "Brandon",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 31,
+            "oauth_id": null,
+            "name": "Scott",
+            "score": 98,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 34,
+            "oauth_id": null,
+            "name": "Martha",
+            "score": 50,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 43,
+            "oauth_id": null,
+            "name": "Sean",
+            "score": -1,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 4,
+        "account_id": 2,
+        "account_url": "/teams/2",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Viral574",
+        "score": 146,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 7,
+            "oauth_id": null,
+            "name": "Thomas",
+            "score": -4,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 8,
+            "oauth_id": null,
+            "name": "Linda",
+            "score": 7,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 29,
+            "oauth_id": null,
+            "name": "Tiffany",
+            "score": 78,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 38,
+            "oauth_id": null,
+            "name": "Lisa",
+            "score": 58,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 40,
+            "oauth_id": null,
+            "name": "Christina",
+            "score": 9,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 44,
+            "oauth_id": null,
+            "name": "Anna",
+            "score": -2,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 5,
+        "account_id": 3,
+        "account_url": "/teams/3",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Yolo268",
+        "score": 145,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 13,
+            "oauth_id": null,
+            "name": "Cynthia",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 19,
+            "oauth_id": null,
+            "name": "Peter",
+            "score": 41,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 26,
+            "oauth_id": null,
+            "name": "Jack",
+            "score": 107,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 35,
+            "oauth_id": null,
+            "name": "Emily",
+            "score": -7,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 46,
+            "oauth_id": null,
+            "name": "Marilyn",
+            "score": -4,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 49,
+            "oauth_id": null,
+            "name": "Kathy",
+            "score": 10,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 50,
+            "oauth_id": null,
+            "name": "Amy",
+            "score": -2,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 51,
+            "oauth_id": null,
+            "name": "Diane",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 6,
+        "account_id": 7,
+        "account_url": "/teams/7",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Echo194",
+        "score": 68,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 10,
+            "oauth_id": null,
+            "name": "Julia",
+            "score": 16,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 20,
+            "oauth_id": null,
+            "name": "Debra",
+            "score": 52,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 7,
+        "account_id": 4,
+        "account_url": "/teams/4",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Cliche685",
+        "score": 39,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 12,
+            "oauth_id": null,
+            "name": "Craig",
+            "score": 5,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 16,
+            "oauth_id": null,
+            "name": "Barbara",
+            "score": -6,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 18,
+            "oauth_id": null,
+            "name": "Andrea",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 24,
+            "oauth_id": null,
+            "name": "Nancy",
+            "score": 6,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 25,
+            "oauth_id": null,
+            "name": "Bobby",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 45,
+            "oauth_id": null,
+            "name": "Roy",
+            "score": 34,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      },
+      {
+        "pos": 8,
+        "account_id": 8,
+        "account_url": "/teams/8",
+        "account_type": "team",
+        "oauth_id": null,
+        "name": "Church-key762",
+        "score": 21,
+        "bracket_id": null,
+        "bracket_name": null,
+        "members": [
+          {
+            "id": 2,
+            "oauth_id": null,
+            "name": "Mary",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 21,
+            "oauth_id": null,
+            "name": "Victoria",
+            "score": 5,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 27,
+            "oauth_id": null,
+            "name": "Sandra",
+            "score": 0,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 36,
+            "oauth_id": null,
+            "name": "Stephen",
+            "score": 1,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 39,
+            "oauth_id": null,
+            "name": "Nicholas",
+            "score": 18,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 41,
+            "oauth_id": null,
+            "name": "Kenneth",
+            "score": -11,
+            "bracket_id": null,
+            "bracket_name": null
+          },
+          {
+            "id": 48,
+            "oauth_id": null,
+            "name": "Hannah",
+            "score": 8,
+            "bracket_id": null,
+            "bracket_name": null
+          }
+        ]
+      }
+    ]
+  }
+}
