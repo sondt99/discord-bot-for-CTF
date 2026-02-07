@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timezone
 
@@ -21,6 +22,7 @@ class ScoreboardCog(commands.Cog):
     def __init__(self, bot: commands.Bot, repo: Repository) -> None:
         self.bot = bot
         self.repo = repo
+        self._check_lock = asyncio.Lock()
         self.scoreboard_loop.start()
         self.bot.loop.create_task(self._run_initial_check())
 
@@ -124,6 +126,50 @@ class ScoreboardCog(commands.Cog):
             )
         )
 
+    @app_commands.command(name="scoreboard_list", description="List scoreboard configs")
+    async def scoreboard_list(self, interaction: discord.Interaction) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+            )
+            return
+        configs = await self.repo.list_scoreboard_configs()
+        guild_configs = [
+            c for c in configs if c.guild_id == interaction.guild.id
+        ]
+        if not guild_configs:
+            await interaction.response.send_message(
+                embed=build_simple_embed("No configs", "No scoreboard configs found."),
+            )
+            return
+        lines = []
+        for cfg in guild_configs:
+            team_text = f", team={cfg.team_name}" if cfg.team_name else ""
+            lines.append(
+                f"{cfg.ctftime_event_id}: {cfg.type} ({cfg.url}{team_text})"
+            )
+        await interaction.response.send_message(
+            embed=build_simple_embed("Scoreboard configs", "\n".join(lines)),
+        )
+
+    @app_commands.command(name="scoreboard_remove", description="Remove scoreboard config")
+    @app_commands.describe(event_id="CTFtime event ID")
+    async def scoreboard_remove(
+        self, interaction: discord.Interaction, event_id: int
+    ) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+            )
+            return
+        await self.repo.delete_scoreboard_config(interaction.guild.id, event_id)
+        await interaction.response.send_message(
+            embed=build_simple_embed(
+                "Scoreboard removed",
+                f"Removed scoreboard config for event ID {event_id}.",
+            )
+        )
+
     async def _run_initial_check(self) -> None:
         await self.bot.wait_until_ready()
         await self._run_scoreboard_checks()
@@ -136,81 +182,91 @@ class ScoreboardCog(commands.Cog):
     async def _run_scoreboard_checks(self) -> None:
         if hasattr(self.bot, "backup_ready"):
             await self.bot.backup_ready.wait()
-        configs = await self.repo.list_scoreboard_configs()
+        async with self._check_lock:
+            configs = await self.repo.list_scoreboard_configs()
 
-        for config in configs:
-            event = await self.repo.get_ctf_event(
-                config.guild_id, config.ctftime_event_id
-            )
-            if not event:
-                continue
-
-            if event.finish_time:
-                try:
-                    finish = datetime.fromisoformat(event.finish_time)
-                    if datetime.now(timezone.utc) > finish:
-                        continue
-                except ValueError:
-                    pass
-
-            try:
-                if config.type == "ctfd":
-                    entries = await fetch_ctfd_scoreboard(config.url, config.auth_token)
-                elif config.type == "rctf":
-                    entries = await fetch_rctf_scoreboard(config.url, config.auth_token)
-                else:
-                    continue
-            except Exception:
-                continue
-
-            tracked_team = config.team_name or SCOREBOARD_TEAM_NAME
-            tracked_entry = None
-            if tracked_team:
-                lower_name = tracked_team.lower()
-                for entry in entries:
-                    if entry["name"].lower() == lower_name:
-                        tracked_entry = entry
-                        break
-                if tracked_entry is None:
-                    continue
-                entries = [tracked_entry]
-
-            payload_hash = make_payload_hash(entries)
-            last_state = await self.repo.get_scoreboard_state(
-                config.guild_id, config.ctftime_event_id
-            )
-            if last_state and last_state.last_hash == payload_hash:
-                continue
-
-            changes = []
-            if last_state and last_state.last_payload:
-                try:
-                    previous = json.loads(last_state.last_payload)
-                    prev_rank = {e["name"]: e["pos"] for e in previous}
-                    for entry in entries[:SCOREBOARD_TOP_N]:
-                        name = entry["name"]
-                        if name in prev_rank and prev_rank[name] != entry["pos"]:
-                            delta = prev_rank[name] - entry["pos"]
-                            direction = "up" if delta > 0 else "down"
-                            changes.append(
-                                f"{name} {direction} to {entry['pos']} ({entry['score']})"
-                            )
-                except Exception:
-                    changes = []
-
-            channel = self.bot.get_channel(config.scoreboard_channel_id)
-            if isinstance(channel, discord.TextChannel):
-                embed = build_scoreboard_embed(
-                    entries, changes, config.url, top_n=SCOREBOARD_TOP_N
+            for config in configs:
+                event = await self.repo.get_ctf_event(
+                    config.guild_id, config.ctftime_event_id
                 )
-                await channel.send(embed=embed)
+                if not event:
+                    continue
 
-            await self.repo.upsert_scoreboard_state(
-                config.guild_id,
-                config.ctftime_event_id,
-                payload_hash,
-                json.dumps(entries, ensure_ascii=False),
-            )
+                if event.finish_time:
+                    try:
+                        finish = datetime.fromisoformat(event.finish_time)
+                        if datetime.now(timezone.utc) > finish:
+                            continue
+                    except ValueError:
+                        pass
+
+                try:
+                    if config.type == "ctfd":
+                        entries = await fetch_ctfd_scoreboard(
+                            config.url, config.auth_token
+                        )
+                    elif config.type == "rctf":
+                        entries = await fetch_rctf_scoreboard(
+                            config.url, config.auth_token
+                        )
+                    else:
+                        continue
+                except Exception:
+                    continue
+
+                tracked_team = config.team_name or SCOREBOARD_TEAM_NAME
+                tracked_entry = None
+                if tracked_team:
+                    lower_name = tracked_team.lower()
+                    for entry in entries:
+                        if entry["name"].lower() == lower_name:
+                            tracked_entry = entry
+                            break
+                    if tracked_entry is None:
+                        continue
+                    entries = [tracked_entry]
+
+                payload_hash = make_payload_hash(entries)
+                last_state = await self.repo.get_scoreboard_state(
+                    config.guild_id, config.ctftime_event_id
+                )
+                if last_state and last_state.last_hash == payload_hash:
+                    continue
+
+                changes = []
+                if last_state and last_state.last_payload:
+                    try:
+                        previous = json.loads(last_state.last_payload)
+                        prev_rank = {e["name"]: e["pos"] for e in previous}
+                        prev_score = {e["name"]: e["score"] for e in previous}
+                        for entry in entries[:SCOREBOARD_TOP_N]:
+                            name = entry["name"]
+                            if name in prev_rank and prev_rank[name] != entry["pos"]:
+                                delta = prev_rank[name] - entry["pos"]
+                                direction = "up" if delta > 0 else "down"
+                                changes.append(
+                                    f"{name} {direction} to {entry['pos']} ({entry['score']})"
+                                )
+                            elif name in prev_score and prev_score[name] != entry["score"]:
+                                changes.append(
+                                    f"{name} score {prev_score[name]} -> {entry['score']} (pos {entry['pos']})"
+                                )
+                    except Exception:
+                        changes = []
+
+                channel = self.bot.get_channel(config.scoreboard_channel_id)
+                if isinstance(channel, discord.TextChannel):
+                    embed = build_scoreboard_embed(
+                        entries, changes, config.url, top_n=SCOREBOARD_TOP_N
+                    )
+                    await channel.send(embed=embed)
+
+                await self.repo.upsert_scoreboard_state(
+                    config.guild_id,
+                    config.ctftime_event_id,
+                    payload_hash,
+                    json.dumps(entries, ensure_ascii=False),
+                )
 
 
 async def setup(bot: commands.Bot) -> None:

@@ -1,8 +1,512 @@
 {
   "url": "https://platform.lac.tf/api/v1/leaderboard/now?limit=100&offset=0",
   "data": {
-    "kind": "badNotStarted",
-    "message": "The CTF has not started yet.",
-    "data": null
+    "kind": "goodLeaderboard",
+    "message": "The leaderboard was retrieved.",
+    "data": {
+      "total": 280,
+      "leaderboard": [
+        {
+          "id": "87431328-e8ee-4ff2-9d3f-6a15b25ed854",
+          "name": "P3ak",
+          "score": 8148
+        },
+        {
+          "id": "2e509a3c-3630-4d8e-aed5-884be4738af1",
+          "name": "tj/sin",
+          "score": 7373
+        },
+        {
+          "id": "adddfacc-0fb7-40c4-b828-f8df7c89e223",
+          "name": "krauq",
+          "score": 6902
+        },
+        {
+          "id": "0363d108-47bf-48a0-b735-6d3c48197f3b",
+          "name": "no rev/pwn no life",
+          "score": 5729
+        },
+        {
+          "id": "17ee6925-f18a-4194-96b6-8a4084604d24",
+          "name": "RubiyaLab",
+          "score": 5522
+        },
+        {
+          "id": "eac43cd3-e8b9-4592-a035-20957697ed99",
+          "name": "0xfun",
+          "score": 5331
+        },
+        {
+          "id": "b7923d82-e556-476a-8ab1-1d581925d615",
+          "name": "Squid Proxy Lovers",
+          "score": 5299
+        },
+        {
+          "id": "35a56812-6ec0-479e-85bd-552088c1a524",
+          "name": "b01lers",
+          "score": 5228
+        },
+        {
+          "id": "c167f713-da81-472f-8b87-3012f16dabc7",
+          "name": "pwnauto",
+          "score": 4772
+        },
+        {
+          "id": "9d81e32e-313b-44c4-b5a9-00bcb7898b58",
+          "name": "Neomware",
+          "score": 4597
+        },
+        {
+          "id": "69345907-33f7-4438-aa7e-93ee128b3188",
+          "name": "Never Stop Exploiting",
+          "score": 3689
+        },
+        {
+          "id": "2fb3f79c-8e3a-498c-8e4f-3743de839158",
+          "name": "DeadSec",
+          "score": 3291
+        },
+        {
+          "id": "796c505e-f692-4bc0-be71-97d1819b59ca",
+          "name": "RaptX",
+          "score": 3119
+        },
+        {
+          "id": "90f99503-7000-45ab-a28f-0592a139041b",
+          "name": "UIT-Wanna.W1n",
+          "score": 3067
+        },
+        {
+          "id": "6bab8767-6037-43f0-af5c-e6c751ae7505",
+          "name": "infobahn",
+          "score": 2855
+        },
+        {
+          "id": "78c6650f-d340-4257-b97f-bd12d1cbba88",
+          "name": "ELT",
+          "score": 2764
+        },
+        {
+          "id": "c7773dea-0cae-4d65-87bc-22764f8e8d07",
+          "name": "THEM?!",
+          "score": 2735
+        },
+        {
+          "id": "f9f8a8c3-a527-46eb-9e99-fabe38c65c46",
+          "name": "GreyHat",
+          "score": 2683
+        },
+        {
+          "id": "3bc9a9e7-e5a9-48ba-ab03-00110fd131d1",
+          "name": "MNGA",
+          "score": 2675
+        },
+        {
+          "id": "8f06c049-f08d-4c02-97de-6440b80b5f8d",
+          "name": "Cascroot",
+          "score": 2643
+        },
+        {
+          "id": "a3613e56-3328-4910-b350-77059712e7fc",
+          "name": "Underr00ted",
+          "score": 2638
+        },
+        {
+          "id": "cf3ec28c-35ad-439f-a0ee-3e8ce3308385",
+          "name": "hackratic",
+          "score": 2632
+        },
+        {
+          "id": "6660b40c-2c00-46f9-a65d-314147806881",
+          "name": "W4llz",
+          "score": 2582
+        },
+        {
+          "id": "7fbf200f-14e5-4916-b100-d2be81415ab8",
+          "name": "KCSC",
+          "score": 2539
+        },
+        {
+          "id": "b04f2508-82f3-428a-ae33-83b8bcb10965",
+          "name": "PwnSec",
+          "score": 2535
+        },
+        {
+          "id": "315925dd-b87d-4878-be0e-95b1257db1af",
+          "name": "CYBERDUNE CLUB",
+          "score": 2531
+        },
+        {
+          "id": "814276fc-a152-43a3-9f82-0afe9d5a9b99",
+          "name": "FR13NDS TEAM",
+          "score": 2511
+        },
+        {
+          "id": "b22cf8c3-dae6-4712-98ee-c3833bf0c6e7",
+          "name": "Dacia Team",
+          "score": 2506
+        },
+        {
+          "id": "fab1642f-7a82-4be7-8800-32fda84e7df2",
+          "name": "Shellphish",
+          "score": 2211
+        },
+        {
+          "id": "8f1411f7-281a-4414-a588-21e2f0031889",
+          "name": "blackpinker",
+          "score": 2201
+        },
+        {
+          "id": "dc7b4e6b-603a-4fc9-9e2f-f5c4cb4673b4",
+          "name": "Maple Bacon",
+          "score": 2180
+        },
+        {
+          "id": "b53d72ef-610c-49bc-8b2c-a0e9751bad0a",
+          "name": "Fermion",
+          "score": 2172
+        },
+        {
+          "id": "8abc11ee-55b5-4418-a70e-64982a384305",
+          "name": "Xyl0n",
+          "score": 2119
+        },
+        {
+          "id": "7ac2bcc3-45fc-4c84-b6f6-c42d3560dc17",
+          "name": "sigpwny",
+          "score": 2114
+        },
+        {
+          "id": "8a4ad60c-3467-446b-8347-208fa8622217",
+          "name": "ICEDTEA",
+          "score": 2078
+        },
+        {
+          "id": "e4231dfb-4b49-4c37-9c21-d1dd1ce0cd28",
+          "name": "ARESx",
+          "score": 2002
+        },
+        {
+          "id": "c080a6ec-b7b7-4b4b-9271-421d52fb5943",
+          "name": "0xL4ugh",
+          "score": 1951
+        },
+        {
+          "id": "30e1a7b3-d00b-4b5d-bf6c-9e2a343cf5b8",
+          "name": "Elden_Cat",
+          "score": 1942
+        },
+        {
+          "id": "db8af969-42a1-4ab5-a920-d3ea0465b59a",
+          "name": "MadrHacks",
+          "score": 1932
+        },
+        {
+          "id": "77d701f7-35af-45ab-a506-11e4aa06e808",
+          "name": "TCP1P",
+          "score": 1916
+        },
+        {
+          "id": "74055196-3a16-45f0-a471-9bb7daa5123f",
+          "name": "Mi9chada",
+          "score": 1830
+        },
+        {
+          "id": "e331301f-d8dd-4e87-be30-f602364a1e31",
+          "name": "The Flat Network Society",
+          "score": 1819
+        },
+        {
+          "id": "6273f09b-043b-44ba-b164-7f6eafec0db6",
+          "name": "CBC Skibidis",
+          "score": 1758
+        },
+        {
+          "id": "6aaae41b-ebda-499c-83d0-14fabaa80610",
+          "name": "Phreaks 2600",
+          "score": 1714
+        },
+        {
+          "id": "b35ac6df-ef54-4ca4-96f7-884549609a7d",
+          "name": "thehackerscrew",
+          "score": 1580
+        },
+        {
+          "id": "533c2034-3353-476b-8663-bc3c080224a8",
+          "name": "InfosecPTIT",
+          "score": 1544
+        },
+        {
+          "id": "860833e7-31df-4431-99ce-97df1421b0f2",
+          "name": "SU",
+          "score": 1520
+        },
+        {
+          "id": "1705a1d0-c353-4915-aca8-d1e72387d173",
+          "name": "0bug",
+          "score": 1505
+        },
+        {
+          "id": "6beb0e9c-fd57-456c-8d2c-469883a2487d",
+          "name": "Team_Namikaze",
+          "score": 1494
+        },
+        {
+          "id": "2aa4412e-bb8b-4923-a09c-9f7fdd13ba99",
+          "name": "SpyVsCat5",
+          "score": 1383
+        },
+        {
+          "id": "6b58562f-803c-4c15-9667-2b565d25efdc",
+          "name": "ScriptSorcerers",
+          "score": 1383
+        },
+        {
+          "id": "7e4889f2-fa2b-4f03-a14d-2d9e47763e6c",
+          "name": "CBSH",
+          "score": 1368
+        },
+        {
+          "id": "483a4722-f59c-495e-bc3e-5833a0baee66",
+          "name": "BKISC",
+          "score": 1323
+        },
+        {
+          "id": "a06088c3-4544-4983-a821-cceab703468f",
+          "name": "XploitRUM",
+          "score": 1271
+        },
+        {
+          "id": "2a469157-e60f-43cc-bb80-1ba4cf2c5434",
+          "name": "Lv1x",
+          "score": 1242
+        },
+        {
+          "id": "1f9436bd-0249-4834-b06b-219ce30b3be3",
+          "name": "Slovak Cyber Team",
+          "score": 1242
+        },
+        {
+          "id": "cde7fbea-843b-421c-af4c-aadceb5e63a4",
+          "name": "MindCrafters",
+          "score": 1236
+        },
+        {
+          "id": "1641dedd-8a16-4fcf-bcb8-5d92fdeead47",
+          "name": "Black Bauhinia",
+          "score": 1234
+        },
+        {
+          "id": "2a8f12fb-f8c9-44e9-bcbe-35f0173562f0",
+          "name": "redtaster",
+          "score": 1230
+        },
+        {
+          "id": "a80b6bd6-34ec-43bb-84c9-b024b1a0bd86",
+          "name": "p3trpreter",
+          "score": 1217
+        },
+        {
+          "id": "065afe6d-df1c-419e-9f0d-d623365cb114",
+          "name": "UAC",
+          "score": 1166
+        },
+        {
+          "id": "a3f082c5-ccbe-47d5-9dfb-4e3ae1e509d0",
+          "name": "NYUSEC",
+          "score": 1160
+        },
+        {
+          "id": "09cba8b3-1e2e-4e55-8e9b-6d4b95f50a3f",
+          "name": "dcua",
+          "score": 1146
+        },
+        {
+          "id": "9b994953-ae05-4fff-b3a9-63d9ea03fbe7",
+          "name": "JAGIC",
+          "score": 1135
+        },
+        {
+          "id": "fd76644a-5355-45e8-ac76-f15085182140",
+          "name": "Les Handicapes",
+          "score": 1131
+        },
+        {
+          "id": "0583c4df-61b4-4274-8dfb-41c04ada6c4c",
+          "name": "cybpltspeedrun",
+          "score": 1116
+        },
+        {
+          "id": "b948a7bc-577b-4650-8912-715f6bf6fac4",
+          "name": "Tarot Triad Tron",
+          "score": 1054
+        },
+        {
+          "id": "ef1df3bb-add0-47b1-b0c9-3876a0f62c5e",
+          "name": "Irgazen",
+          "score": 977
+        },
+        {
+          "id": "82a4ee84-8933-49ce-97dd-8253a576e5fb",
+          "name": "valgrind",
+          "score": 967
+        },
+        {
+          "id": "f44af214-a094-4283-a5a7-d52fef20c369",
+          "name": "Hidden Investigations",
+          "score": 940
+        },
+        {
+          "id": "c4af86c6-8417-4fcc-8ca4-f5ccf1eb6ff6",
+          "name": "cyberMEOW",
+          "score": 920
+        },
+        {
+          "id": "68bdef44-8f55-4a9b-8ab8-57b0840ad855",
+          "name": "M4SEC",
+          "score": 911
+        },
+        {
+          "id": "a358c714-7432-434e-b760-2a0e36c9ef50",
+          "name": "Cyber@UC",
+          "score": 904
+        },
+        {
+          "id": "51103d7a-0b1d-4de7-8b01-e3b7046f08c7",
+          "name": "F1ux",
+          "score": 901
+        },
+        {
+          "id": "f8e01b9f-b893-43ac-a4d6-da150e5043f2",
+          "name": "NS CTF - SUKA SUKA GW LAH KOK LO YANG NGATUR",
+          "score": 890
+        },
+        {
+          "id": "3382beca-3605-4771-9987-6cf64251e09c",
+          "name": "Bugs B0unt3r",
+          "score": 884
+        },
+        {
+          "id": "c2aa58dc-34f4-4abc-a9dd-eb62328ae335",
+          "name": "ByteC4Ts",
+          "score": 884
+        },
+        {
+          "id": "df481351-c903-4492-823b-1d75c631e38d",
+          "name": "405NOTFOUND",
+          "score": 884
+        },
+        {
+          "id": "22226895-ae30-4663-861a-61bab05d91e9",
+          "name": "UMDCSEC",
+          "score": 884
+        },
+        {
+          "id": "1514382b-db00-419b-ac2d-d5dd3c556a63",
+          "name": "TahSec",
+          "score": 868
+        },
+        {
+          "id": "425bade8-16d9-4484-82bc-26864ced632d",
+          "name": "armed and dangerous",
+          "score": 864
+        },
+        {
+          "id": "3b9d98df-9492-4181-a2e0-928ee14145cf",
+          "name": "BITs2Sys",
+          "score": 859
+        },
+        {
+          "id": "240585f8-9eec-4e58-8a3a-013f29d91941",
+          "name": "sof_t1m3",
+          "score": 827
+        },
+        {
+          "id": "935362d8-91fc-45de-a537-d70ae1fb4b22",
+          "name": "Cyb3ars",
+          "score": 823
+        },
+        {
+          "id": "74068c14-15f7-4a9f-a737-0f15976a172e",
+          "name": "Themis",
+          "score": 762
+        },
+        {
+          "id": "959dfcc3-2775-4cf8-87cf-3541128e6199",
+          "name": "!Time_For_418",
+          "score": 756
+        },
+        {
+          "id": "dc8d6f81-1f41-4f93-a56d-ca1a3cbd9c5d",
+          "name": "ExMoK",
+          "score": 749
+        },
+        {
+          "id": "b603c1d3-dfe4-4c88-900a-efea5fdf3bcf",
+          "name": "Krissy's Cool Team for Attractive People",
+          "score": 724
+        },
+        {
+          "id": "514b8169-91f4-4f24-8499-6aaee6e90389",
+          "name": "HackUTK",
+          "score": 702
+        },
+        {
+          "id": "b62cc7d6-1050-4529-9d18-7cc644829de7",
+          "name": "Hash Slinging Hackers",
+          "score": 699
+        },
+        {
+          "id": "a869257d-af6b-4a65-a8c2-76dcd1aceed2",
+          "name": "W4terDr0p",
+          "score": 697
+        },
+        {
+          "id": "aeb65d06-88ae-4626-8467-b67c72378764",
+          "name": "when yh bisa jdi nanuna",
+          "score": 697
+        },
+        {
+          "id": "428d13a0-fceb-4c78-bce8-b161a42fbcd8",
+          "name": "APD-1280",
+          "score": 697
+        },
+        {
+          "id": "979a907d-275d-411a-98bc-de9c2113c236",
+          "name": "UIT.k0dunqtool",
+          "score": 697
+        },
+        {
+          "id": "af8cb62a-156c-4fce-bf10-0e6e0edff430",
+          "name": "CC!T",
+          "score": 688
+        },
+        {
+          "id": "cde5d052-0a30-4299-ab84-1049771efde7",
+          "name": "Tenesys",
+          "score": 675
+        },
+        {
+          "id": "d4228877-110b-4beb-8837-797af942d45a",
+          "name": "R4nd0m B00l5h33t5 G0",
+          "score": 667
+        },
+        {
+          "id": "b854c1cc-54ef-4a43-8ec2-c95ab74519ec",
+          "name": "wolvsec",
+          "score": 667
+        },
+        {
+          "id": "5b918214-1dc1-41bf-b46b-8036a259a3b5",
+          "name": "_alone_",
+          "score": 667
+        },
+        {
+          "id": "39ec5e1d-3012-425a-91cd-a6d669d9bd3e",
+          "name": "Nusahack",
+          "score": 667
+        }
+      ]
+    }
   }
 }

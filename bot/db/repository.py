@@ -235,6 +235,18 @@ class Repository:
             for row in rows
         ]
 
+    async def delete_scoreboard_config(self, guild_id: int, ctftime_event_id: int) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "DELETE FROM scoreboard_config WHERE guild_id=? AND ctftime_event_id=?",
+                (guild_id, ctftime_event_id),
+            )
+            await db.execute(
+                "DELETE FROM scoreboard_state WHERE guild_id=? AND ctftime_event_id=?",
+                (guild_id, ctftime_event_id),
+            )
+            await db.commit()
+
     async def upsert_scoreboard_state(
         self,
         guild_id: int,

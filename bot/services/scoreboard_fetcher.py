@@ -63,6 +63,62 @@ def _find_rctf_entries(payload: dict | list) -> list[dict] | None:
     return None
 
 
+def _extract_rctf_leaderboard_entries(payload: dict) -> list[dict] | None:
+    if not isinstance(payload, dict):
+        return None
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return None
+    leaderboard = data.get("leaderboard")
+    if not isinstance(leaderboard, list):
+        return None
+    entries = []
+    for idx, item in enumerate(leaderboard, start=1):
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        score = item.get("score")
+        if name is None or score is None:
+            continue
+        entries.append({"name": str(name), "score": float(score), "pos": idx})
+    return entries or None
+
+
+def _extract_rctf_graph_entries(payload: dict) -> list[dict] | None:
+    if not isinstance(payload, dict):
+        return None
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return None
+    graph = data.get("graph")
+    if not isinstance(graph, list):
+        return None
+
+    entries = []
+    for item in graph:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        points = item.get("points")
+        if not name or not isinstance(points, list) or not points:
+            continue
+        last_point = points[-1]
+        if not isinstance(last_point, dict):
+            continue
+        score = last_point.get("score")
+        if score is None:
+            continue
+        entries.append({"name": str(name), "score": float(score)})
+
+    if not entries:
+        return None
+
+    entries.sort(key=lambda x: x["score"], reverse=True)
+    for idx, entry in enumerate(entries, start=1):
+        entry["pos"] = idx
+    return entries
+
+
 async def fetch_ctfd_scoreboard(base_url: str, auth_token: str | None = None) -> list[dict]:
     base = base_url.rstrip("/") + "/"
     headers = {"User-Agent": "ctf-bot/1.0"}
@@ -119,6 +175,14 @@ async def fetch_rctf_scoreboard(url: str, auth_token: str | None = None) -> list
         raise RuntimeError("rCTF scoreboard JSON not captured.")
 
     payload = captured[-1]["data"]
+    leaderboard_entries = _extract_rctf_leaderboard_entries(payload)
+    if leaderboard_entries is not None:
+        return leaderboard_entries
+
+    graph_entries = _extract_rctf_graph_entries(payload)
+    if graph_entries is not None:
+        return graph_entries
+
     entries = _find_rctf_entries(payload)
     if entries is None:
         raise RuntimeError("rCTF scoreboard payload missing entries.")
