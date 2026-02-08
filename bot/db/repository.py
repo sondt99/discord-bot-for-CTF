@@ -37,6 +37,21 @@ class ScoreboardState:
     updated_at: str
 
 
+@dataclass
+class Challenge:
+    id: int
+    guild_id: int
+    ctftime_event_id: int
+    challenge_name: str
+    category: str
+    thread_id: int
+    channel_id: int
+    status: str
+    solved_by: list[int]
+    created_at: str
+    solved_at: str | None
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -138,6 +153,10 @@ class Repository:
 
     async def delete_ctf_event(self, guild_id: int, ctftime_event_id: int) -> None:
         async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "DELETE FROM challenges WHERE guild_id=? AND ctftime_event_id=?",
+                (guild_id, ctftime_event_id),
+            )
             await db.execute(
                 "DELETE FROM scoreboard_state WHERE guild_id=? AND ctftime_event_id=?",
                 (guild_id, ctftime_event_id),
@@ -291,3 +310,107 @@ class Repository:
             last_payload=row[3],
             updated_at=row[4],
         )
+
+    # ── Challenge tracking ───────────────────────────────────────────
+
+    def _row_to_challenge(self, row: tuple) -> Challenge:
+        solved_by_raw = row[8]
+        solved_by = json.loads(solved_by_raw) if solved_by_raw else []
+        return Challenge(
+            id=row[0],
+            guild_id=row[1],
+            ctftime_event_id=row[2],
+            challenge_name=row[3],
+            category=row[4],
+            thread_id=row[5],
+            channel_id=row[6],
+            status=row[7],
+            solved_by=solved_by,
+            created_at=row[9],
+            solved_at=row[10],
+        )
+
+    async def create_challenge(
+        self,
+        guild_id: int,
+        ctftime_event_id: int,
+        challenge_name: str,
+        category: str,
+        thread_id: int,
+        channel_id: int,
+    ) -> int:
+        created_at = _utc_now_iso()
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                INSERT INTO challenges
+                  (guild_id, ctftime_event_id, challenge_name, category,
+                   thread_id, channel_id, status, solved_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'open', NULL, ?)
+                """,
+                (guild_id, ctftime_event_id, challenge_name, category,
+                 thread_id, channel_id, created_at),
+            )
+            challenge_id = cursor.lastrowid
+            await db.commit()
+        return challenge_id
+
+    async def get_challenge_by_thread(self, thread_id: int) -> Challenge | None:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT id, guild_id, ctftime_event_id, challenge_name, category,
+                       thread_id, channel_id, status, solved_by, created_at, solved_at
+                FROM challenges WHERE thread_id=?
+                """,
+                (thread_id,),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+        if not row:
+            return None
+        return self._row_to_challenge(row)
+
+    async def mark_challenge_done(
+        self, thread_id: int, solver_ids: list[int]
+    ) -> None:
+        solved_at = _utc_now_iso()
+        solved_by_json = json.dumps(solver_ids)
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                """
+                UPDATE challenges
+                SET status='done', solved_by=?, solved_at=?
+                WHERE thread_id=?
+                """,
+                (solved_by_json, solved_at, thread_id),
+            )
+            await db.commit()
+
+    async def list_challenges(
+        self, guild_id: int, ctftime_event_id: int
+    ) -> list[Challenge]:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT id, guild_id, ctftime_event_id, challenge_name, category,
+                       thread_id, channel_id, status, solved_by, created_at, solved_at
+                FROM challenges
+                WHERE guild_id=? AND ctftime_event_id=?
+                ORDER BY created_at ASC
+                """,
+                (guild_id, ctftime_event_id),
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        return [self._row_to_challenge(row) for row in rows]
+
+    async def delete_challenges_for_event(
+        self, guild_id: int, ctftime_event_id: int
+    ) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "DELETE FROM challenges WHERE guild_id=? AND ctftime_event_id=?",
+                (guild_id, ctftime_event_id),
+            )
+            await db.commit()

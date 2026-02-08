@@ -19,7 +19,6 @@ CHANNELS = [
 
 BOT_CATEGORY_NAME = "BOT"
 BOT_LOG_CHANNEL = "log"
-BOT_BACKUP_CHANNEL = "backup"
 
 
 def _sanitize_category_name(name: str) -> str:
@@ -102,8 +101,4 @@ async def ensure_bot_admin_category(
     if log_channel is None:
         log_channel = await category.create_text_channel(name=BOT_LOG_CHANNEL)
 
-    backup_channel = discord.utils.get(category.text_channels, name=BOT_BACKUP_CHANNEL)
-    if backup_channel is None:
-        backup_channel = await category.create_text_channel(name=BOT_BACKUP_CHANNEL)
-
-    return category, {"log": log_channel, "backup": backup_channel}
+    return category, {"log": log_channel}
