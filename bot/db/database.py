@@ -33,6 +33,21 @@ CREATE TABLE IF NOT EXISTS scoreboard_state (
   updated_at TEXT NOT NULL,
   PRIMARY KEY (guild_id, ctftime_event_id)
 );
+
+CREATE TABLE IF NOT EXISTS challenges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guild_id INTEGER NOT NULL,
+  ctftime_event_id INTEGER NOT NULL,
+  challenge_name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  thread_id INTEGER NOT NULL UNIQUE,
+  channel_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  solved_by TEXT,
+  created_at TEXT NOT NULL,
+  solved_at TEXT,
+  FOREIGN KEY (guild_id, ctftime_event_id) REFERENCES ctf_events(guild_id, ctftime_event_id)
+);
 """
 
 

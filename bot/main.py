@@ -18,7 +18,6 @@ class CtfBot(commands.Bot):
         intents.guilds = True
         super().__init__(command_prefix="!", intents=intents)
         self.repo = Repository(DATABASE_PATH)
-        self.backup_ready = asyncio.Event()
 
     async def on_message(self, message: discord.Message) -> None:
         if message.guild is None:
@@ -28,6 +27,7 @@ class CtfBot(commands.Bot):
     async def setup_hook(self) -> None:
         await init_db(DATABASE_PATH)
         await self.load_extension("bot.cogs.ctf")
+        await self.load_extension("bot.cogs.challenge")
         await self.load_extension("bot.cogs.scoreboard_cog")
         await self.load_extension("bot.cogs.audit")
 
