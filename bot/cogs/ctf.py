@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hmac
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -267,7 +269,7 @@ class CtfCog(commands.Cog):
                 ephemeral=True,
             )
             return
-        if password != CTF_REMOVE_PASSWORD:
+        if not hmac.compare_digest(password or "", CTF_REMOVE_PASSWORD):
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "Wrong password",
