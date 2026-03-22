@@ -405,6 +405,14 @@ class Repository:
             await cursor.close()
         return [self._row_to_challenge(row) for row in rows]
 
+    async def delete_challenge_by_thread(self, thread_id: int) -> bool:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                "DELETE FROM challenges WHERE thread_id=?", (thread_id,)
+            )
+            await db.commit()
+            return cursor.rowcount > 0
+
     async def delete_challenges_for_event(
         self, guild_id: int, ctftime_event_id: int
     ) -> None:

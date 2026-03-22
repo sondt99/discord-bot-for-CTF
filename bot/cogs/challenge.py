@@ -276,6 +276,71 @@ class ChallengeCog(commands.Cog):
             )
         )
 
+    # ── /remove-challenge ─────────────────────────────────────────────
+
+    @app_commands.command(
+        name="remove-challenge",
+        description="Remove the current challenge from tracking (keeps the thread)",
+    )
+    @app_commands.default_permissions(administrator=True)
+    async def remove_challenge(self, interaction: discord.Interaction) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+                ephemeral=True,
+            )
+            return
+
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Admin only", "Only admins can use this command."
+                ),
+                ephemeral=True,
+            )
+            return
+
+        thread = interaction.channel
+        if not isinstance(thread, discord.Thread):
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Wrong channel",
+                    "Use this command inside a challenge thread.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        challenge = await self.repo.get_challenge_by_thread(thread.id)
+        if challenge is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Not tracked",
+                    "This thread is not tracked as a challenge.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer()
+
+        deleted = await self.repo.delete_challenge_by_thread(thread.id)
+        if deleted:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Challenge removed",
+                    f"**{challenge.challenge_name}** has been removed from tracking.\n"
+                    f"The thread is still here for reference.",
+                )
+            )
+        else:
+            await interaction.followup.send(
+                embed=build_simple_embed(
+                    "Failed",
+                    "Could not remove the challenge. It may have already been removed.",
+                ),
+            )
+
     # ── /challenges ───────────────────────────────────────────────────
 
     @app_commands.command(
