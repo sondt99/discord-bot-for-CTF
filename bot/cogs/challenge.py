@@ -105,6 +105,19 @@ class ChallengeCog(commands.Cog):
                 chall.challenge_name.lower() == name.lower()
                 and chall.category.lower() == topic.lower()
             ):
+                # Thread was deleted manually — clean up stale DB entry and allow re-creation
+                fetched = self.bot.get_channel(chall.thread_id)
+                if fetched is None:
+                    try:
+                        fetched = await self.bot.fetch_channel(chall.thread_id)
+                    except discord.NotFound:
+                        fetched = None
+                    except discord.Forbidden:
+                        pass
+                if fetched is None:
+                    await self.repo.delete_challenge_by_thread(chall.thread_id)
+                    continue
+
                 await interaction.response.send_message(
                     embed=build_simple_embed(
                         "Duplicate challenge",
