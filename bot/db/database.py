@@ -1,4 +1,14 @@
+import re
+
 import aiosqlite
+
+_SAFE_IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def _validate_identifier(name: str) -> str:
+    if not _SAFE_IDENTIFIER.match(name):
+        raise ValueError(f"Invalid identifier: {name}")
+    return name
 
 
 SCHEMA = """
@@ -62,6 +72,7 @@ async def _table_exists(db: aiosqlite.Connection, name: str) -> bool:
 
 
 async def _table_info(db: aiosqlite.Connection, name: str) -> list[tuple]:
+    _validate_identifier(name)
     cursor = await db.execute(f"PRAGMA table_info({name})")
     rows = await cursor.fetchall()
     await cursor.close()
@@ -110,6 +121,9 @@ async def _migrate_ctf_events(db: aiosqlite.Connection) -> None:
 async def _ensure_column(
     db: aiosqlite.Connection, table: str, column: str, column_type: str
 ) -> None:
+    _validate_identifier(table)
+    _validate_identifier(column)
+    _validate_identifier(column_type)
     info = await _table_info(db, table)
     if any(row[1] == column for row in info):
         return
