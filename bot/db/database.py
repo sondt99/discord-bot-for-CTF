@@ -58,6 +58,20 @@ CREATE TABLE IF NOT EXISTS challenges (
   solved_at TEXT,
   FOREIGN KEY (guild_id, ctftime_event_id) REFERENCES ctf_events(guild_id, ctftime_event_id)
 );
+
+CREATE TABLE IF NOT EXISTS message_events (
+  message_id INTEGER PRIMARY KEY,
+  guild_id INTEGER NOT NULL,
+  channel_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_message_events_guild_user
+  ON message_events(guild_id, user_id);
+
+CREATE INDEX IF NOT EXISTS idx_message_events_guild_channel_user
+  ON message_events(guild_id, channel_id, user_id);
 """
 
 

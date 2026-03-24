@@ -7,6 +7,7 @@ Discord bot for CTFs. It fetches events from CTFtime, creates per-event categori
 - Upcoming CTF list with pagination (3 events per page).
 - Join multiple CTFs per server (each gets its own category + channels).
 - Scoreboard polling with change notifications (CTFd / rCTF).
+- Message statistics by user, with leaderboard and per-user detail views.
 - Admin-only management commands (hide, remove).
 - Automatic admin-only BOT category for logs and DB backups.
 - All bot responses use embeds.
@@ -65,6 +66,12 @@ Scoreboard:
   - `auth_token`: optional
   - `event_id`: required when multiple CTFs exist in the server
 
+Stats:
+
+- `/stats leaderboard [limit] [channel]` — top users by tracked message count.
+- `/stats user <member>` — message count, rank, active channels, and top channels for one member.
+- `/stats sync [limit_per_channel] [channel]` — backfill historical messages into stats, including active threads (admin only).
+
 ## Channels created on join
 
 Each joined CTF gets a category named after the event, with these text channels:
@@ -88,6 +95,7 @@ The bot needs:
 
 - `manage_channels` — create categories/channels, hide/remove
 - `manage_messages` (optional) — if you plan to extend moderation features
+- `read_message_history` — required if you want `/stats sync` to scan old messages
 
 If you keep the BOT category, admins must allow the bot to create private channels.
 
@@ -95,4 +103,5 @@ If you keep the BOT category, admins must allow the bot to create private channe
 
 - The bot does not create Discord scheduled events.
 - Image thumbnails are disabled for CTF upcoming list.
+- Message statistics only include messages tracked after deployment, unless you run `/stats sync`.
 - Do not commit your `.env` or token to Git.

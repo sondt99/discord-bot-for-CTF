@@ -52,6 +52,34 @@ class Challenge:
     solved_at: str | None
 
 
+@dataclass
+class MessageLeaderboardEntry:
+    user_id: int
+    message_count: int
+    first_message_at: str | None
+    last_message_at: str | None
+
+
+@dataclass
+class ChannelMessageStats:
+    channel_id: int
+    message_count: int
+    first_message_at: str | None
+    last_message_at: str | None
+
+
+@dataclass
+class UserMessageStats:
+    guild_id: int
+    user_id: int
+    message_count: int
+    active_channels: int
+    first_message_at: str | None
+    last_message_at: str | None
+    rank: int
+    top_channels: list[ChannelMessageStats]
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -309,6 +337,169 @@ class Repository:
             last_hash=row[2],
             last_payload=row[3],
             updated_at=row[4],
+        )
+
+    # ── Message tracking ─────────────────────────────────────────────
+
+    async def record_message(
+        self,
+        message_id: int,
+        guild_id: int,
+        channel_id: int,
+        user_id: int,
+        created_at: str,
+    ) -> bool:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                INSERT OR IGNORE INTO message_events
+                  (message_id, guild_id, channel_id, user_id, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (message_id, guild_id, channel_id, user_id, created_at),
+            )
+            await db.commit()
+            return cursor.rowcount > 0
+
+    async def record_messages(
+        self,
+        messages: list[tuple[int, int, int, int, str]],
+    ) -> int:
+        if not messages:
+            return 0
+        async with aiosqlite.connect(self.db_path) as db:
+            before = db.total_changes
+            await db.executemany(
+                """
+                INSERT OR IGNORE INTO message_events
+                  (message_id, guild_id, channel_id, user_id, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                messages,
+            )
+            await db.commit()
+            return db.total_changes - before
+
+    async def get_message_leaderboard(
+        self,
+        guild_id: int,
+        limit: int = 10,
+        channel_id: int | None = None,
+    ) -> list[MessageLeaderboardEntry]:
+        query = """
+            SELECT user_id,
+                   COUNT(*) AS message_count,
+                   MIN(created_at) AS first_message_at,
+                   MAX(created_at) AS last_message_at
+            FROM message_events
+            WHERE guild_id=?
+        """
+        params: list[int] = [guild_id]
+        if channel_id is not None:
+            query += " AND channel_id=?"
+            params.append(channel_id)
+        query += """
+            GROUP BY user_id
+            ORDER BY message_count DESC, last_message_at DESC
+            LIMIT ?
+        """
+        params.append(limit)
+
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(query, tuple(params))
+            rows = await cursor.fetchall()
+            await cursor.close()
+
+        return [
+            MessageLeaderboardEntry(
+                user_id=row[0],
+                message_count=row[1],
+                first_message_at=row[2],
+                last_message_at=row[3],
+            )
+            for row in rows
+        ]
+
+    async def get_user_message_stats(
+        self,
+        guild_id: int,
+        user_id: int,
+        top_channel_limit: int = 5,
+    ) -> UserMessageStats | None:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT COUNT(*) AS message_count,
+                       COUNT(DISTINCT channel_id) AS active_channels,
+                       MIN(created_at) AS first_message_at,
+                       MAX(created_at) AS last_message_at
+                FROM message_events
+                WHERE guild_id=? AND user_id=?
+                """,
+                (guild_id, user_id),
+            )
+            summary = await cursor.fetchone()
+            await cursor.close()
+
+            if not summary or summary[0] == 0:
+                return None
+
+            total_messages = summary[0]
+            active_channels = summary[1]
+            first_message_at = summary[2]
+            last_message_at = summary[3]
+
+            cursor = await db.execute(
+                """
+                SELECT 1 + COUNT(*)
+                FROM (
+                    SELECT user_id
+                    FROM message_events
+                    WHERE guild_id=?
+                    GROUP BY user_id
+                    HAVING COUNT(*) > ?
+                )
+                """,
+                (guild_id, total_messages),
+            )
+            rank_row = await cursor.fetchone()
+            await cursor.close()
+            rank = rank_row[0] if rank_row and rank_row[0] else 1
+
+            cursor = await db.execute(
+                """
+                SELECT channel_id,
+                       COUNT(*) AS message_count,
+                       MIN(created_at) AS first_message_at,
+                       MAX(created_at) AS last_message_at
+                FROM message_events
+                WHERE guild_id=? AND user_id=?
+                GROUP BY channel_id
+                ORDER BY message_count DESC, last_message_at DESC
+                LIMIT ?
+                """,
+                (guild_id, user_id, top_channel_limit),
+            )
+            channel_rows = await cursor.fetchall()
+            await cursor.close()
+
+        return UserMessageStats(
+            guild_id=guild_id,
+            user_id=user_id,
+            message_count=total_messages,
+            active_channels=active_channels,
+            first_message_at=first_message_at,
+            last_message_at=last_message_at,
+            rank=rank,
+            top_channels=[
+                ChannelMessageStats(
+                    channel_id=row[0],
+                    message_count=row[1],
+                    first_message_at=row[2],
+                    last_message_at=row[3],
+                )
+                for row in channel_rows
+            ],
         )
 
     # ── Challenge tracking ───────────────────────────────────────────

@@ -16,6 +16,7 @@ class CtfBot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
+        intents.messages = True
         super().__init__(command_prefix="!", intents=intents)
         self.repo = Repository(DATABASE_PATH)
 
@@ -30,6 +31,7 @@ class CtfBot(commands.Bot):
         await self.load_extension("bot.cogs.challenge")
         await self.load_extension("bot.cogs.scoreboard_cog")
         await self.load_extension("bot.cogs.audit")
+        await self.load_extension("bot.cogs.stats")
 
         if DISCORD_GUILD_ID:
             guild = discord.Object(id=int(DISCORD_GUILD_ID))
