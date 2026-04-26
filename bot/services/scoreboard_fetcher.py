@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
-from urllib.parse import urljoin
+import logging
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
-from playwright.async_api import async_playwright
 
+log = logging.getLogger(__name__)
 
 CTFD_CANDIDATES = [
     "/api/v1/scoreboard",
@@ -16,7 +16,8 @@ CTFD_CANDIDATES = [
     "/scores?format=json",
 ]
 
-RCTF_PAT = re.compile(r"(score|scores|leader|leaderboard|standing|rank)", re.I)
+# rCTF /api/v1/leaderboard/now requires limit<=100
+RCTF_LIMIT = 100
 
 
 def _looks_like_ctfd_scoreboard(obj: dict) -> bool:
@@ -51,72 +52,49 @@ def _normalize_entries(entries: list[dict]) -> list[dict]:
     return normalized
 
 
-def _find_rctf_entries(payload: dict | list) -> list[dict] | None:
-    if isinstance(payload, list):
-        return payload
+def _extract_rctf_leaderboard(payload: dict) -> list[dict] | None:
+    """Extract entries from rCTF /api/v1/leaderboard/now response.
+
+    Handles both the standard structure {data: {leaderboard: [...]}}
+    and fallback structures {data: {scores: [...]}} etc.
+    """
     if not isinstance(payload, dict):
         return None
-    for key in ("data", "leaderboard", "scores", "result", "items"):
-        value = payload.get(key)
-        if isinstance(value, list):
-            return value
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return None
+
+    # Primary: data.leaderboard[]
+    leaderboard = data.get("leaderboard")
+    if isinstance(leaderboard, list):
+        if not leaderboard:
+            return []  # valid but empty (CTF not started / ended)
+        entries = []
+        for idx, item in enumerate(leaderboard, start=1):
+            if not isinstance(item, dict):
+                continue
+            name = item.get("name")
+            score = item.get("score")
+            if name is None or score is None:
+                continue
+            entries.append({"name": str(name), "score": float(score), "pos": idx})
+        return entries or None
+
     return None
 
 
-def _extract_rctf_leaderboard_entries(payload: dict) -> list[dict] | None:
-    if not isinstance(payload, dict):
-        return None
-    data = payload.get("data")
-    if not isinstance(data, dict):
-        return None
-    leaderboard = data.get("leaderboard")
-    if not isinstance(leaderboard, list):
-        return None
-    entries = []
-    for idx, item in enumerate(leaderboard, start=1):
-        if not isinstance(item, dict):
-            continue
-        name = item.get("name")
-        score = item.get("score")
-        if name is None or score is None:
-            continue
-        entries.append({"name": str(name), "score": float(score), "pos": idx})
-    return entries or None
+def _rctf_base_url(url: str) -> str:
+    """Normalize user-provided URL to scheme + host only.
 
-
-def _extract_rctf_graph_entries(payload: dict) -> list[dict] | None:
-    if not isinstance(payload, dict):
-        return None
-    data = payload.get("data")
-    if not isinstance(data, dict):
-        return None
-    graph = data.get("graph")
-    if not isinstance(graph, list):
-        return None
-
-    entries = []
-    for item in graph:
-        if not isinstance(item, dict):
-            continue
-        name = item.get("name")
-        points = item.get("points")
-        if not name or not isinstance(points, list) or not points:
-            continue
-        last_point = points[-1]
-        if not isinstance(last_point, dict):
-            continue
-        score = last_point.get("score")
-        if score is None:
-            continue
-        entries.append({"name": str(name), "score": float(score)})
-
-    if not entries:
-        return None
-
-    entries.sort(key=lambda x: x["score"], reverse=True)
-    for idx, entry in enumerate(entries, start=1):
-        entry["pos"] = idx
-    return entries
+    Accepts:
+      - https://umdctf.io/scores
+      - https://umdctf.io/#/scores
+      - https://umdctf.io/api/v1/leaderboard/now
+      - https://umdctf.io
+    Always returns: https://umdctf.io/
+    """
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}/"
 
 
 async def fetch_ctfd_scoreboard(base_url: str, auth_token: str | None = None) -> list[dict]:
@@ -142,51 +120,39 @@ async def fetch_ctfd_scoreboard(base_url: str, auth_token: str | None = None) ->
 
 
 async def fetch_rctf_scoreboard(url: str, auth_token: str | None = None) -> list[dict]:
-    captured = []
+    base = _rctf_base_url(url)
     headers = {"User-Agent": "ctf-bot/1.0"}
     if auth_token:
         headers["Authorization"] = f"Bearer {auth_token}"
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(extra_http_headers=headers)
-        page = await context.new_page()
+    api_url = f"{base}api/v1/leaderboard/now?limit={RCTF_LIMIT}&offset=0"
 
-        async def on_response(resp):
-            try:
-                if resp.request.resource_type not in ("xhr", "fetch"):
-                    return
-                if not RCTF_PAT.search(resp.url):
-                    return
-                ct = (resp.headers.get("content-type") or "").lower()
-                if "json" not in ct:
-                    return
+    async with aiohttp.ClientSession(headers=headers) as session:
+        try:
+            async with session.get(
+                api_url, timeout=aiohttp.ClientTimeout(total=20)
+            ) as resp:
+                if resp.status != 200:
+                    raise RuntimeError(
+                        f"rCTF API returned status {resp.status} for {api_url}"
+                    )
                 payload = await resp.json()
-                captured.append({"url": resp.url, "data": payload})
-            except Exception:
-                return
+        except aiohttp.ClientError as exc:
+            raise RuntimeError(f"Failed to connect to rCTF at {base}: {exc}") from exc
 
-        page.on("response", on_response)
-        await page.goto(url, wait_until="networkidle", timeout=60_000)
-        await page.wait_for_timeout(2_000)
-        await browser.close()
+        entries = _extract_rctf_leaderboard(payload)
+        if entries is not None:
+            return entries
 
-    if not captured:
-        raise RuntimeError("rCTF scoreboard JSON not captured.")
+        # Fallback: if data is a raw list
+        data = payload.get("data")
+        if isinstance(data, list):
+            return _normalize_entries(data)
 
-    payload = captured[-1]["data"]
-    leaderboard_entries = _extract_rctf_leaderboard_entries(payload)
-    if leaderboard_entries is not None:
-        return leaderboard_entries
-
-    graph_entries = _extract_rctf_graph_entries(payload)
-    if graph_entries is not None:
-        return graph_entries
-
-    entries = _find_rctf_entries(payload)
-    if entries is None:
-        raise RuntimeError("rCTF scoreboard payload missing entries.")
-    return _normalize_entries(entries)
+        raise RuntimeError(
+            f"rCTF API returned unexpected format. "
+            f"Response kind: {payload.get('kind', 'unknown')}"
+        )
 
 
 def make_payload_hash(entries: list[dict]) -> str:
