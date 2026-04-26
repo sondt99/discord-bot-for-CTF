@@ -1,107 +1,141 @@
 # Discord CTF Bot
 
-Discord bot for CTFs. It fetches events from CTFtime, creates per-event categories and channels, and tracks realtime scoreboards for CTFd and rCTF.
+A Discord bot for organizing Capture The Flag competitions. It integrates with CTFtime to fetch events, creates per-event categories and channels, tracks challenges with threads, and polls live scoreboards for CTFd and rCTF platforms.
 
 ## Features
 
-- Upcoming CTF list with pagination (3 events per page).
-- Join multiple CTFs per server (each gets its own category + channels).
-- Scoreboard polling with change notifications (CTFd / rCTF).
-- Message statistics by user, with leaderboard and per-user detail views.
-- Admin-only management commands (hide, remove).
-- Automatic admin-only BOT category for logs and DB backups.
-- All bot responses use embeds.
+- **CTFtime integration** — browse and join upcoming CTF events with pagination
+- **Challenge management** — create threads per challenge, track solved/open status, ping `@ctf` role on creation
+- **Live scoreboard** — periodic polling with change notifications for CTFd and rCTF
+- **Message statistics** — per-user leaderboard, activity breakdown, and historical backfill
+- **Multi-event support** — run multiple CTFs simultaneously, each with its own category
+- **Role-based access** — `@ctf` role members can mark challenges as solved; admin commands remain admin-only
+- **Audit logging** — automatic private `BOT` category with command logs and database backups
 
 ## Requirements
 
 - Python 3.11+
-- Discord bot token
-- Playwright (only needed for rCTF scoreboard capture)
+- Discord bot token with the [required intents](#permissions)
 
-## Quick setup
+## Setup
 
-1. Create `.env` from `.env.example` and fill in values.
-2. Install dependencies:
+```bash
+# 1. Clone and configure
+cp .env.example .env
+# Edit .env and set DISCORD_TOKEN
 
-```
+# 2. Install dependencies
 pip install -r requirements.txt
-playwright install
-```
 
-3. Run the bot:
-
-```
+# 3. Run the bot
 python -m bot.main
 ```
 
-## Environment variables
+## Environment Variables
 
-Required:
-
-- `DISCORD_TOKEN` — your bot token
-
-Optional:
-
-- `DATABASE_PATH` — path to SQLite DB (default: `ctf_bot.db`)
-- `SCOREBOARD_POLL_SECONDS` — scoreboard polling interval in seconds (default: `90`)
-- `SCOREBOARD_TOP_N` — top N teams to display in scoreboard updates (default: `10`)
-- `TIMEZONE` — timezone offset for event times (example: `UTC+7`)
-- `CTF_REMOVE_PASSWORD` — password required by `/ctf remove`
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DISCORD_TOKEN` | Yes | — | Discord bot token |
+| `DATABASE_PATH` | No | `ctf_bot.db` | Path to SQLite database file |
+| `SCOREBOARD_POLL_SECONDS` | No | `90` | Scoreboard polling interval (seconds) |
+| `SCOREBOARD_TOP_N` | No | `10` | Number of teams shown in scoreboard updates |
+| `SCOREBOARD_TEAM_NAME` | No | — | Your team name (for scoreboard tracking) |
+| `TIMEZONE` | No | `UTC` | Timezone offset for event display (e.g. `UTC+7`) |
+| `CTF_REMOVE_PASSWORD` | No | — | Password required by `/ctf remove` |
+| `DISCORD_GUILD_ID` | No | — | Guild ID for faster slash command sync |
 
 ## Commands
 
-CTF:
+### CTF Events
 
-- `/ctf upcoming [limit]` — list upcoming CTFs (single embed per page).
-- `/ctf join <event_id>` — create category + channels for an event.
-- `/ctf list` — list joined CTFs and their IDs.
-- `/ctf hidden [event_id]` — hide a CTF category from non-admins.
-- `/ctf remove [event_id] password:<password>` — delete category + data (admin only, response is private).
+| Command | Description | Permission |
+|---|---|---|
+| `/ctf upcoming [limit]` | Browse upcoming CTFs from CTFtime | Everyone |
+| `/ctf join <event_id>` | Create category and channels for an event | Everyone |
+| `/ctf list` | List joined CTFs and their event IDs | Everyone |
+| `/ctf hidden [event_id]` | Hide a CTF category from non-admins | Admin |
+| `/ctf remove [event_id] password` | Delete a CTF category and all associated data | Admin |
 
-Scoreboard:
+### Challenges
 
-- `/scoreboard <type> <url> [auth_token] [event_id]`
-  - `type`: `CTFd` or `rCTF`
-  - `url`: scoreboard URL or base URL
-  - `auth_token`: optional
-  - `event_id`: required when multiple CTFs exist in the server
+| Command | Description | Permission |
+|---|---|---|
+| `/challenge <name>` | Create a thread for a challenge (must be in a topic channel) | Everyone |
+| `/done <solver> [solver2] ...` | Mark a challenge as solved and rename the thread | Admin / `@ctf` role |
+| `/challenges [event_id]` | List all challenges with status and thread links | Everyone |
+| `/remove-challenge` | Untrack the current challenge (keeps the thread) | Admin |
 
-Stats:
+### Scoreboard
 
-- `/stats leaderboard [limit] [channel]` — top users by tracked message count.
-- `/stats user <member>` — message count, rank, active channels, and top channels for one member.
-- `/stats sync [limit_per_channel] [channel]` — backfill historical messages into stats, including active threads (admin only).
+| Command | Description | Permission |
+|---|---|---|
+| `/scoreboard <type> <url> [auth_token] [team] [event_id]` | Configure scoreboard polling (`CTFd` or `rCTF`) | Admin |
+| `/scoreboard_list` | Show active scoreboard configs | Everyone |
+| `/scoreboard_remove <event_id>` | Remove scoreboard config | Admin |
 
-## Channels created on join
+### Statistics
 
-Each joined CTF gets a category named after the event, with these text channels:
+| Command | Description | Permission |
+|---|---|---|
+| `/stats leaderboard [limit] [channel]` | Top users by message count | Everyone |
+| `/stats user <member>` | Per-user message stats, rank, and active channels | Everyone |
+| `/stats sync [limit] [channel]` | Backfill message history into stats | Admin |
 
-- `account` (read-only for everyone)
-- `general`, `rev`, `pwn`, `web`, `crypto`, `for`, `misc`
-- `scoreboard`
+## Workflow
 
-## BOT admin category
+```
+1. /ctf join <event_id>          → Bot creates category with topic channels
+2. Go to a topic channel (rev, pwn, web, ...)
+3. /challenge <name>             → Bot creates a thread and pings @ctf
+4. Work on the challenge in the thread
+5. /done @solver                 → Mark solved, thread renamed to [DONE]
+6. /challenges                   → Overview with clickable thread links
+```
 
-On startup, the bot ensures a private category named `BOT` with:
+## Channels Created on Join
 
-- `log` — command logs
-- `backup` — a DB backup file after each slash command
+Each CTF event gets a Discord category named after the event, containing:
 
-Only admins and the bot can view this category.
+```
+account       — read-only info channel
+general       — general discussion
+rev           — reverse engineering
+pwn           — binary exploitation
+web           — web challenges
+crypto        — cryptography
+for           — forensics
+misc          — miscellaneous
+scoreboard    — live scoreboard updates
+```
+
+## BOT Admin Category
+
+On startup, the bot creates a private `BOT` category visible only to admins:
+
+- **#log** — command usage logs
+- **#backup** — database backup after each slash command invocation
 
 ## Permissions
 
-The bot needs:
+The bot requires these Discord permissions:
 
-- `manage_channels` — create categories/channels, hide/remove
-- `manage_messages` (optional) — if you plan to extend moderation features
-- `read_message_history` — required if you want `/stats sync` to scan old messages
+| Permission | Reason |
+|---|---|
+| Manage Channels | Create categories, channels, and threads |
+| Create Public Threads | Challenge threads |
+| Read Message History | `/stats sync` backfill |
+| Send Messages | Thread creation and responses |
+| Embed Links | All bot responses use embeds |
+| Manage Roles | (Optional) if you want the bot to manage the `@ctf` role |
 
-If you keep the BOT category, admins must allow the bot to create private channels.
+**Required intents** (enable in the Discord Developer Portal):
+
+- Server Members
+- Message Content (if using prefix commands in the future)
 
 ## Notes
 
-- The bot does not create Discord scheduled events.
-- Image thumbnails are disabled for CTF upcoming list.
-- Message statistics only include messages tracked after deployment, unless you run `/stats sync`.
-- Do not commit your `.env` or token to Git.
+- The `@ctf` role must be created manually in your server for the challenge ping and `/done` access to work.
+- Message statistics only track messages sent after the bot is deployed, unless you run `/stats sync`.
+- Scoreboard polling for rCTF uses the public API directly — no browser dependency required.
+- The bot uses SQLite. For production use, ensure the database file is on a persistent volume.
