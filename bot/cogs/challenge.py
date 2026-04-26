@@ -170,7 +170,7 @@ class ChallengeCog(commands.Cog):
 
     @app_commands.command(
         name="done",
-        description="Mark the current challenge thread as solved (admin only)",
+        description="Mark the current challenge thread as solved",
     )
     @app_commands.describe(
         solver="The member who solved this challenge",
@@ -178,7 +178,6 @@ class ChallengeCog(commands.Cog):
         solver3="Additional solver (optional)",
         solver4="Additional solver (optional)",
     )
-    @app_commands.default_permissions(administrator=True)
     async def done(
         self,
         interaction: discord.Interaction,
@@ -194,10 +193,12 @@ class ChallengeCog(commands.Cog):
             )
             return
 
-        if not interaction.user.guild_permissions.administrator:
+        is_admin = interaction.user.guild_permissions.administrator
+        has_ctf_role = discord.utils.get(interaction.user.roles, name="ctf") is not None
+        if not is_admin and not has_ctf_role:
             await interaction.response.send_message(
                 embed=build_simple_embed(
-                    "Admin only", "Only admins can use this command."
+                    "No permission", "Only admins or @ctf role members can use this command."
                 ),
                 ephemeral=True,
             )

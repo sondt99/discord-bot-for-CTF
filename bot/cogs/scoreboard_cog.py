@@ -43,6 +43,7 @@ class ScoreboardCog(commands.Cog):
             app_commands.Choice(name="rCTF", value="rctf"),
         ]
     )
+    @app_commands.default_permissions(administrator=True)
     async def scoreboard(
         self,
         interaction: discord.Interaction,
@@ -55,6 +56,14 @@ class ScoreboardCog(commands.Cog):
         if interaction.guild is None:
             await interaction.response.send_message(
                 embed=build_simple_embed("Guild only", "Use this in a server."),
+            )
+            return
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Admin only", "Only admins can configure scoreboard."
+                ),
+                ephemeral=True,
             )
             return
         await interaction.response.defer()
@@ -154,12 +163,21 @@ class ScoreboardCog(commands.Cog):
 
     @app_commands.command(name="scoreboard_remove", description="Remove scoreboard config")
     @app_commands.describe(event_id="CTFtime event ID")
+    @app_commands.default_permissions(administrator=True)
     async def scoreboard_remove(
         self, interaction: discord.Interaction, event_id: int
     ) -> None:
         if interaction.guild is None:
             await interaction.response.send_message(
                 embed=build_simple_embed("Guild only", "Use this in a server."),
+            )
+            return
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                embed=build_simple_embed(
+                    "Admin only", "Only admins can remove scoreboard configs."
+                ),
+                ephemeral=True,
             )
             return
         await self.repo.delete_scoreboard_config(interaction.guild.id, event_id)
