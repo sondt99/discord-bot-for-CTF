@@ -58,4 +58,7 @@ class CtfPaginationView(discord.ui.View):
             if isinstance(item, discord.ui.Button):
                 item.disabled = True
         if self.message:
-            await self.message.edit(view=self)
+            try:
+                await self.message.edit(view=self)
+            except discord.NotFound:
+                pass

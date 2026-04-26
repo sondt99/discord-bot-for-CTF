@@ -112,8 +112,7 @@ class Repository:
                   category_id=excluded.category_id,
                   channels_json=excluded.channels_json,
                   start_time=excluded.start_time,
-                  finish_time=excluded.finish_time,
-                  created_at=excluded.created_at
+                  finish_time=excluded.finish_time
                 """,
                 (
                     guild_id,

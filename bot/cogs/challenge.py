@@ -47,6 +47,15 @@ class ChallengeCog(commands.Cog):
     )
     @app_commands.describe(name="Challenge name")
     async def challenge(self, interaction: discord.Interaction, name: str) -> None:
+        # Sanitize: strip whitespace, truncate to 100 chars, no newlines
+        name = name.strip().replace("\n", " ")[:100]
+        if not name:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Invalid name", "Challenge name cannot be empty."),
+                ephemeral=True,
+            )
+            return
+
         if interaction.guild is None:
             await interaction.response.send_message(
                 embed=build_simple_embed("Guild only", "Use this in a server."),
@@ -77,20 +86,11 @@ class ChallengeCog(commands.Cog):
 
         event = await self._find_event_by_channel(interaction.guild.id, channel)
         if event is None:
-            # Debug: show what the bot sees to help diagnose
-            events = await self.repo.list_ctf_events(interaction.guild.id)
-            db_info = "\n".join(
-                f"- {e.event_title}: category_id={e.category_id}"
-                for e in events
-            ) or "(no events in DB for this guild)"
             await interaction.response.send_message(
                 embed=build_simple_embed(
                     "No CTF found",
-                    f"This channel does not belong to any joined CTF event.\n\n"
-                    f"**Debug:**\n"
-                    f"Guild ID: `{interaction.guild.id}`\n"
-                    f"Channel category_id: `{channel.category_id}`\n"
-                    f"DB events:\n{db_info}",
+                    "This channel does not belong to any joined CTF event.\n"
+                    "Use this command in a topic channel under a CTF category.",
                 ),
                 ephemeral=True,
             )
@@ -244,10 +244,15 @@ class ChallengeCog(commands.Cog):
             topic = self._channel_topic(parent)
             category_name = topic or parent.name.upper()
 
+            # Strip [DONE] prefix if thread was already renamed
+            clean_name = thread.name
+            if clean_name.upper().startswith("[DONE]"):
+                clean_name = clean_name[6:].strip()
+
             await self.repo.create_challenge(
                 guild_id=interaction.guild.id,
                 ctftime_event_id=event.ctftime_event_id,
-                challenge_name=thread.name,
+                challenge_name=clean_name,
                 category=category_name,
                 thread_id=thread.id,
                 channel_id=parent.id,
