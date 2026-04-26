@@ -458,7 +458,7 @@ class ChallengeCog(commands.Cog):
                     solver_text = " — " + ", ".join(
                         f"<@{uid}>" for uid in ch.solved_by
                     )
-                lines.append(f"{status_icon} {ch.challenge_name} → <#{ch.thread_id}>{solver_text}")
+                lines.append(f"{status_icon} <#{ch.thread_id}>{solver_text}")
             embed.add_field(
                 name=cat, value="\n".join(lines), inline=False
             )
