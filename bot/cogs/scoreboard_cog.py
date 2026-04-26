@@ -249,26 +249,39 @@ class ScoreboardCog(commands.Cog):
                 if last_state and last_state.last_hash == payload_hash:
                     continue
 
-                changes = []
+                # Detect rank changes only
+                rank_changes = []
                 if last_state and last_state.last_payload:
                     try:
                         previous = json.loads(last_state.last_payload)
                         prev_rank = {e["name"]: e["pos"] for e in previous}
-                        prev_score = {e["name"]: e["score"] for e in previous}
                         for entry in entries[:SCOREBOARD_TOP_N]:
                             name = entry["name"]
                             if name in prev_rank and prev_rank[name] != entry["pos"]:
                                 delta = prev_rank[name] - entry["pos"]
                                 direction = "up" if delta > 0 else "down"
-                                changes.append(
-                                    f"{name} {direction} to {entry['pos']} ({entry['score']})"
-                                )
-                            elif name in prev_score and prev_score[name] != entry["score"]:
-                                changes.append(
-                                    f"{name} score {prev_score[name]} -> {entry['score']} (pos {entry['pos']})"
+                                rank_changes.append(
+                                    (name, direction, entry["pos"], entry["score"], delta)
                                 )
                     except Exception:
-                        changes = []
+                        rank_changes = []
+
+                # Update state regardless
+                await self.repo.upsert_scoreboard_state(
+                    config.guild_id,
+                    config.ctftime_event_id,
+                    payload_hash,
+                    json.dumps(entries, ensure_ascii=False),
+                )
+
+                # Only notify when there are rank changes
+                if not rank_changes:
+                    continue
+
+                changes = [
+                    f"{name} {direction} to {pos} ({score})"
+                    for name, direction, pos, score, _ in rank_changes
+                ]
 
                 channel = self.bot.get_channel(config.scoreboard_channel_id)
                 if isinstance(channel, discord.TextChannel):
@@ -276,13 +289,6 @@ class ScoreboardCog(commands.Cog):
                         entries, changes, config.url, top_n=SCOREBOARD_TOP_N
                     )
                     await channel.send(embed=embed)
-
-                await self.repo.upsert_scoreboard_state(
-                    config.guild_id,
-                    config.ctftime_event_id,
-                    payload_hash,
-                    json.dumps(entries, ensure_ascii=False),
-                )
 
 
 async def setup(bot: commands.Bot) -> None:
