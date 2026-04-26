@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
+from bot.config import DATABASE_PATH
 from bot.services.guild_setup import ensure_bot_admin_category
 from bot.utils.embeds import build_simple_embed
 
@@ -72,6 +75,54 @@ class AuditCog(commands.Cog):
             f"Error: {error}",
         )
         await log_channel.send(embed=log_embed)
+
+    # ── /backup ──────────────────────────────────────────────────────
+
+    @app_commands.command(name="backup", description="Upload database backup to BOT category")
+    @app_commands.default_permissions(administrator=True)
+    async def backup(self, interaction: discord.Interaction) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Guild only", "Use this in a server."),
+                ephemeral=True,
+            )
+            return
+
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Admin only", "Only admins can use this command."),
+                ephemeral=True,
+            )
+            return
+
+        db_path = Path(DATABASE_PATH or "ctf_bot.db")
+        if not db_path.exists():
+            await interaction.response.send_message(
+                embed=build_simple_embed("Not found", "Database file not found."),
+                ephemeral=True,
+            )
+            return
+
+        try:
+            _, channels = await ensure_bot_admin_category(interaction.guild)
+        except Exception:
+            await interaction.response.send_message(
+                embed=build_simple_embed("Error", "Could not create BOT category."),
+                ephemeral=True,
+            )
+            return
+
+        backup_channel = channels["backup"]
+
+        await interaction.response.defer(ephemeral=True)
+
+        with open(db_path, "rb") as f:
+            await backup_channel.send(file=discord.File(f, filename="ctf_bot.db"))
+
+        await interaction.followup.send(
+            embed=build_simple_embed("Done", f"Database uploaded to {backup_channel.mention}."),
+            ephemeral=True,
+        )
 
 
 async def setup(bot: commands.Bot) -> None:
