@@ -145,14 +145,18 @@ class ChallengeCog(commands.Cog):
             channel_id=channel.id,
         )
 
+        # Find @ctf role to ping
+        ctf_role = discord.utils.get(interaction.guild.roles, name="ctf")
+
         await thread.send(
+            content=ctf_role.mention if ctf_role else None,
             embed=build_simple_embed(
                 f"Challenge: {name}",
                 f"**CTF:** {event.event_title}\n"
                 f"**Category:** {topic}\n"
                 f"**Status:** Open\n\n"
                 f"Good luck! When solved, an admin will use `/done` here.",
-            )
+            ),
         )
 
         await interaction.followup.send(
